@@ -1,6 +1,6 @@
-"""Proyectos: carpetas con scripts relacionados y un pequeño archivo de metadatos.
+"""Projects: folders of related scripts with a small metadata file.
 
-Quitar un proyecto de la lista nunca borra sus archivos.
+Removing a project from the list never deletes its files.
 """
 
 from __future__ import annotations
@@ -36,7 +36,7 @@ def _folder_name(name: str) -> str:
     cleaned = "".join(c if c.isalnum() or c in "-_." else "-" for c in name.strip())
     cleaned = cleaned.strip("-.")
     if not cleaned:
-        raise ProjectError("El nombre del proyecto no es válido")
+        raise ProjectError("The project name is not valid")
     return cleaned
 
 
@@ -69,7 +69,7 @@ class ProjectService:
                 "name": project.name, "description": project.description, "created": project.created,
             })
         except OSError as exc:
-            raise ProjectError(f"No se pudieron guardar los datos del proyecto: {exc.strerror or exc}") from None
+            raise ProjectError(f"Could not save the project data: {exc.strerror or exc}") from None
 
     def list_projects(self) -> list[Project]:
         projects = []
@@ -86,11 +86,11 @@ class ProjectService:
     def create(self, name: str, parent: Path, description: str = "") -> Project:
         directory = parent / _folder_name(name)
         if directory.exists():
-            raise ProjectError(f"Ya existe {directory}; elige otro nombre o ábrela como proyecto")
+            raise ProjectError(f"{directory} already exists; choose another name or add it as a project")
         try:
             directory.mkdir(parents=True)
         except OSError as exc:
-            raise ProjectError(f"No se pudo crear {directory}: {exc.strerror or exc}") from None
+            raise ProjectError(f"Could not create {directory}: {exc.strerror or exc}") from None
         project = Project(directory, " ".join(name.split()), " ".join(description.split()),
                           datetime.now().isoformat(timespec="seconds"))
         self._write_metadata(project)
@@ -99,7 +99,7 @@ class ProjectService:
 
     def add_existing(self, directory: Path) -> Project:
         if not directory.is_dir():
-            raise ProjectError(f"{directory} no es una carpeta")
+            raise ProjectError(f"{directory} is not a folder")
         if not (directory / METADATA_FILE).exists():
             self._write_metadata(Project(directory, directory.name, "", datetime.now().isoformat(timespec="seconds")))
         self._register(directory)
@@ -108,21 +108,21 @@ class ProjectService:
     def rename(self, project: Project, new_name: str) -> Project:
         new_name = " ".join(new_name.split())
         if not new_name:
-            raise ProjectError("El nombre no puede estar vacío")
+            raise ProjectError("The name cannot be empty")
         renamed = Project(project.path, new_name, project.description, project.created)
         self._write_metadata(renamed)
         return renamed
 
     def duplicate(self, project: Project, new_name: str) -> Project:
         if not project.exists:
-            raise ProjectError(f"No existe la carpeta {project.path}")
+            raise ProjectError(f"The folder {project.path} does not exist")
         target = project.path.parent / _folder_name(new_name)
         if target.exists():
-            raise ProjectError(f"Ya existe {target}; elige otro nombre")
+            raise ProjectError(f"{target} already exists; choose another name")
         try:
             shutil.copytree(project.path, target, symlinks=True)
         except OSError as exc:
-            raise ProjectError(f"No se pudo duplicar el proyecto: {exc}") from None
+            raise ProjectError(f"Could not duplicate the project: {exc}") from None
         copy = Project(target, " ".join(new_name.split()), project.description,
                        datetime.now().isoformat(timespec="seconds"))
         self._write_metadata(copy)

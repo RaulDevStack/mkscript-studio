@@ -1,4 +1,4 @@
-"""Proyectos: carpetas de scripts relacionados."""
+"""Projects: folders of related scripts."""
 
 from __future__ import annotations
 
@@ -45,7 +45,7 @@ class ProjectsView(Gtk.Box):
         paned.set_shrink_start_child(False)
         paned.set_position(300)
         self.append(paned)
-        # Al volver a la sección se vuelven a listar los archivos (pueden haber cambiado).
+        # Re-list the files when returning to this section (they may have changed).
         self.connect("map", lambda *_: self._show_detail())
         self.refresh()
 
@@ -53,8 +53,8 @@ class ProjectsView(Gtk.Box):
         column = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8, width_request=260,
                          margin_start=12, margin_end=12, margin_top=12, margin_bottom=12)
         buttons = Gtk.Box(spacing=6, homogeneous=True)
-        buttons.append(text_button("Nuevo", self.create_project, icon="folder-new-symbolic", css=("suggested-action",)))
-        buttons.append(text_button("Añadir carpeta", self.add_existing, icon="folder-open-symbolic"))
+        buttons.append(text_button("New", self.create_project, icon="folder-new-symbolic", css=("suggested-action",)))
+        buttons.append(text_button("Add folder", self.add_existing, icon="folder-open-symbolic"))
         column.append(buttons)
         self.project_list = Gtk.ListBox(selection_mode=Gtk.SelectionMode.SINGLE)
         self.project_list.add_css_class("navigation-sidebar")
@@ -66,9 +66,9 @@ class ProjectsView(Gtk.Box):
 
     def _build_detail(self) -> Gtk.Widget:
         self.empty_page = Adw.StatusPage(
-            icon_name="folder-symbolic", title="Sin proyectos",
-            description="Un proyecto agrupa scripts relacionados en una carpeta. Crea uno nuevo "
-                        "o añade una carpeta existente.")
+            icon_name="folder-symbolic", title="No projects",
+            description="A project groups related scripts in a folder. Create a new one "
+                        "or add an existing folder.")
         self.detail = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=16,
                               margin_start=24, margin_end=24, margin_top=20, margin_bottom=24)
         self.name_label = label("", css=("title-2",), wrap=True)
@@ -78,15 +78,15 @@ class ProjectsView(Gtk.Box):
 
         actions = Gtk.FlowBox(selection_mode=Gtk.SelectionMode.NONE, max_children_per_line=6,
                               column_spacing=6, row_spacing=6)
-        actions.append(text_button("Nuevo script aquí", self._new_script, icon="document-new-symbolic",
+        actions.append(text_button("New script here", self._new_script, icon="document-new-symbolic",
                                    css=("suggested-action",)))
-        actions.append(text_button("Abrir carpeta", self._reveal, icon="folder-open-symbolic"))
-        actions.append(text_button("Renombrar", self._rename, icon="document-edit-symbolic"))
-        actions.append(text_button("Duplicar", self._duplicate, icon="edit-copy-symbolic"))
-        actions.append(text_button("Quitar de la lista", self._remove, icon="list-remove-symbolic"))
+        actions.append(text_button("Open folder", self._reveal, icon="folder-open-symbolic"))
+        actions.append(text_button("Rename", self._rename, icon="document-edit-symbolic"))
+        actions.append(text_button("Duplicate", self._duplicate, icon="edit-copy-symbolic"))
+        actions.append(text_button("Remove from list", self._remove, icon="list-remove-symbolic"))
         self.detail.append(actions)
 
-        self.files_group = Adw.PreferencesGroup(title="Archivos")
+        self.files_group = Adw.PreferencesGroup(title="Files")
         self.detail.append(self.files_group)
         self._file_rows: list[Gtk.Widget] = []
 
@@ -99,7 +99,7 @@ class ProjectsView(Gtk.Box):
         self.stack.add_named(scroller, "detail")
         return self.stack
 
-    # -- datos -------------------------------------------------------------
+    # -- data --------------------------------------------------------------
 
     def refresh(self, select: Path | None = None) -> None:
         previous = select or (self.selected.path if self.selected else None)
@@ -109,7 +109,7 @@ class ProjectsView(Gtk.Box):
             box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2, margin_top=6, margin_bottom=6,
                           margin_start=6, margin_end=6)
             box.append(label(project.name, css=("heading",), ellipsize=True))
-            subtitle = tilde_path(project.path) if project.exists else "Carpeta no encontrada"
+            subtitle = tilde_path(project.path) if project.exists else "Folder not found"
             box.append(label(subtitle, css=("dim-label", "caption"), ellipsize=True))
             row = Gtk.ListBoxRow()
             row.set_child(box)
@@ -133,13 +133,13 @@ class ProjectsView(Gtk.Box):
         if project is None:
             return
         self.name_label.set_text(project.name)
-        self.path_label.set_text(tilde_path(project.path) + ("" if project.exists else " (no existe)"))
+        self.path_label.set_text(tilde_path(project.path) + ("" if project.exists else " (does not exist)"))
         for row in self._file_rows:
             self.files_group.remove(row)
         self._file_rows = []
         files = self.services.projects.files(project)
         if not files:
-            placeholder = Adw.ActionRow(title="No hay archivos", subtitle="Crea un script con «Nuevo script aquí».")
+            placeholder = Adw.ActionRow(title="No files", subtitle="Create a script with \"New script here\".")
             self.files_group.add(placeholder)
             self._file_rows.append(placeholder)
         for path in files:
@@ -152,11 +152,11 @@ class ProjectsView(Gtk.Box):
             self.files_group.add(row)
             self._file_rows.append(row)
 
-    # -- acciones ------------------------------------------------------------
+    # -- actions -------------------------------------------------------------
 
     def _name_dialog(self, heading: str, body: str, initial: str, action: str, callback) -> None:
         entry = Gtk.Entry(text=initial, activates_default=True)
-        ask(self, heading, body, [("cancel", "Cancelar", ""), ("ok", action, "suggested")],
+        ask(self, heading, body, [("cancel", "Cancel", ""), ("ok", action, "suggested")],
             lambda r: r == "ok" and callback(entry.get_text()), default="ok", extra_child=entry)
 
     def create_project(self) -> None:
@@ -167,20 +167,20 @@ class ProjectsView(Gtk.Box):
                 self.services.files.ensure_directory(parent)
                 project = self.services.projects.create(name, parent)
             except (ProjectError, OSError) as exc:
-                show_error(self, "No se pudo crear el proyecto", str(exc))
+                show_error(self, "Could not create the project", str(exc))
                 return
             self.refresh(select=project.path)
-            self.window.toast(f"Proyecto creado en {tilde_path(project.path)}")
+            self.window.toast(f"Project created at {tilde_path(project.path)}")
 
-        self._name_dialog("Nuevo proyecto", f"Se creará una carpeta dentro de {tilde_path(parent)}.",
-                          "", "Crear", create)
+        self._name_dialog("New project", f"A folder will be created inside {tilde_path(parent)}.",
+                          "", "Create", create)
 
     def add_existing(self) -> None:
         def add(path: Path) -> None:
             try:
                 project = self.services.projects.add_existing(path)
             except ProjectError as exc:
-                show_error(self, "No se pudo añadir la carpeta", str(exc))
+                show_error(self, "Could not add the folder", str(exc))
                 return
             self.refresh(select=project.path)
 
@@ -204,12 +204,12 @@ class ProjectsView(Gtk.Box):
             try:
                 self.services.projects.rename(project, name)
             except ProjectError as exc:
-                show_error(self, "No se pudo renombrar", str(exc))
+                show_error(self, "Could not rename", str(exc))
                 return
             self.refresh()
 
-        self._name_dialog("Renombrar proyecto", "Cambia el nombre visible; la carpeta no se mueve.",
-                          project.name, "Renombrar", rename)
+        self._name_dialog("Rename project", "Changes the displayed name; the folder is not moved.",
+                          project.name, "Rename", rename)
 
     def _duplicate(self) -> None:
         project = self.selected
@@ -220,13 +220,13 @@ class ProjectsView(Gtk.Box):
             try:
                 copy = self.services.projects.duplicate(project, name)
             except ProjectError as exc:
-                show_error(self, "No se pudo duplicar", str(exc))
+                show_error(self, "Could not duplicate", str(exc))
                 return
             self.refresh(select=copy.path)
-            self.window.toast(f"Proyecto duplicado en {tilde_path(copy.path)}")
+            self.window.toast(f"Project duplicated at {tilde_path(copy.path)}")
 
-        self._name_dialog("Duplicar proyecto", "Se copiará la carpeta completa junto a la original.",
-                          f"{project.name} copia", "Duplicar", duplicate)
+        self._name_dialog("Duplicate project", "The whole folder will be copied next to the original.",
+                          f"{project.name} copy", "Duplicate", duplicate)
 
     def _remove(self) -> None:
         project = self.selected
@@ -239,6 +239,6 @@ class ProjectsView(Gtk.Box):
                 self.selected = None
                 self.refresh()
 
-        ask(self, "¿Quitar de la lista?",
-            f"«{project.name}» dejará de aparecer aquí. La carpeta y sus archivos no se borran.",
-            [("cancel", "Cancelar", ""), ("remove", "Quitar", "destructive")], remove)
+        ask(self, "Remove from list?",
+            f"\"{project.name}\" will no longer be listed here. The folder and its files are not deleted.",
+            [("cancel", "Cancel", ""), ("remove", "Remove", "destructive")], remove)

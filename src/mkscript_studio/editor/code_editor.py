@@ -1,7 +1,7 @@
-"""Editor de código basado en GtkSourceView 5.
+"""Code editor based on GtkSourceView 5.
 
-Incluye resaltado de Bash, números de línea, buscar/reemplazar, marcas de
-diagnóstico y el autocompletado con Tab descrito en ``completion.resolve_tab``.
+Includes Bash highlighting, line numbers, find/replace, diagnostic marks and
+the Tab completion described in ``completion.resolve_tab``.
 """
 
 from __future__ import annotations
@@ -55,7 +55,7 @@ def new_source_buffer(dark: bool = True) -> GtkSource.Buffer:
 
 
 def iter_at_line(buffer: Gtk.TextBuffer, line: int, column: int = 0) -> Gtk.TextIter:
-    """``get_iter_at_line*`` devuelve ``(bool, iter)`` en GTK 4."""
+    """``get_iter_at_line*`` returns ``(bool, iter)`` in GTK 4."""
     line = max(0, min(line, buffer.get_line_count() - 1))
     result = buffer.get_iter_at_line(line)
     it = result[1] if isinstance(result, tuple) else result
@@ -76,7 +76,7 @@ _KIND_BADGE = {
 
 
 class CompletionPopup(Gtk.Popover):
-    """Lista de sugerencias que no roba el foco al editor."""
+    """Suggestion list that does not steal focus from the editor."""
 
     __gtype_name__ = "MksCompletionPopup"
 
@@ -89,7 +89,7 @@ class CompletionPopup(Gtk.Popover):
         self.explicit = False
 
         self.listbox = Gtk.ListBox(selection_mode=Gtk.SelectionMode.SINGLE, can_focus=False)
-        self.listbox.update_property([Gtk.AccessibleProperty.LABEL], ["Sugerencias de autocompletado"])
+        self.listbox.update_property([Gtk.AccessibleProperty.LABEL], ["Autocompletion suggestions"])
         self.listbox.connect("row-activated", self._row_activated)
         self.scroller = Gtk.ScrolledWindow(
             hscrollbar_policy=Gtk.PolicyType.NEVER,
@@ -174,7 +174,7 @@ class CompletionPopup(Gtk.Popover):
 
 
 class SearchBar(Gtk.Revealer):
-    """Buscar y reemplazar con GtkSource.SearchContext."""
+    """Find and replace with GtkSource.SearchContext."""
 
     __gtype_name__ = "MksSearchBar"
 
@@ -187,8 +187,8 @@ class SearchBar(Gtk.Revealer):
         self.context.set_highlight(True)
         self.context.connect("notify::occurrences-count", lambda *_: self._update_count())
 
-        self.search_entry = Gtk.SearchEntry(placeholder_text="Buscar", hexpand=True)
-        self.search_entry.update_property([Gtk.AccessibleProperty.LABEL], ["Buscar"])
+        self.search_entry = Gtk.SearchEntry(placeholder_text="Find", hexpand=True)
+        self.search_entry.update_property([Gtk.AccessibleProperty.LABEL], ["Find"])
         self.search_entry.connect("search-changed", self._on_search_changed)
         self.search_entry.connect("activate", lambda *_: self.find(forward=True))
         self.search_entry.connect("next-match", lambda *_: self.find(forward=True))
@@ -198,24 +198,24 @@ class SearchBar(Gtk.Revealer):
         key.connect("key-pressed", self._on_entry_key)
         self.search_entry.add_controller(key)
 
-        self.case_button = Gtk.ToggleButton(label="Aa", tooltip_text="Distinguir mayúsculas")
+        self.case_button = Gtk.ToggleButton(label="Aa", tooltip_text="Match case")
         self.case_button.connect("toggled", lambda b: self._set_option("case_sensitive", b.get_active()))
-        self.regex_button = Gtk.ToggleButton(label=".*", tooltip_text="Expresión regular")
+        self.regex_button = Gtk.ToggleButton(label=".*", tooltip_text="Regular expression")
         self.regex_button.connect("toggled", lambda b: self._set_option("regex_enabled", b.get_active()))
-        self.word_button = Gtk.ToggleButton(label="‹w›", tooltip_text="Palabra completa")
+        self.word_button = Gtk.ToggleButton(label="‹w›", tooltip_text="Whole word")
         self.word_button.connect("toggled", lambda b: self._set_option("at_word_boundaries", b.get_active()))
 
         self.count_label = Gtk.Label(width_chars=12, xalign=0.5)
         self.count_label.add_css_class("dim-label")
         self.count_label.add_css_class("caption")
 
-        prev_button = Gtk.Button(icon_name="go-up-symbolic", tooltip_text="Anterior (Mayús+Intro)")
+        prev_button = Gtk.Button(icon_name="go-up-symbolic", tooltip_text="Previous (Shift+Enter)")
         prev_button.connect("clicked", lambda *_: self.find(forward=False))
-        next_button = Gtk.Button(icon_name="go-down-symbolic", tooltip_text="Siguiente (Intro)")
+        next_button = Gtk.Button(icon_name="go-down-symbolic", tooltip_text="Next (Enter)")
         next_button.connect("clicked", lambda *_: self.find(forward=True))
-        self.replace_toggle = Gtk.ToggleButton(icon_name="edit-find-replace-symbolic", tooltip_text="Reemplazar (Ctrl+H)")
+        self.replace_toggle = Gtk.ToggleButton(icon_name="edit-find-replace-symbolic", tooltip_text="Replace (Ctrl+H)")
         self.replace_toggle.connect("toggled", lambda b: self.replace_row.set_visible(b.get_active()))
-        close_button = Gtk.Button(icon_name="window-close-symbolic", tooltip_text="Cerrar (Esc)")
+        close_button = Gtk.Button(icon_name="window-close-symbolic", tooltip_text="Close (Esc)")
         close_button.add_css_class("flat")
         close_button.connect("clicked", lambda *_: self.close())
 
@@ -230,12 +230,12 @@ class SearchBar(Gtk.Revealer):
         for widget in (self.search_entry, self.count_label, options, nav, self.replace_toggle, close_button):
             search_row.append(widget)
 
-        self.replace_entry = Gtk.Entry(placeholder_text="Reemplazar por", hexpand=True)
-        self.replace_entry.update_property([Gtk.AccessibleProperty.LABEL], ["Reemplazar por"])
+        self.replace_entry = Gtk.Entry(placeholder_text="Replace with", hexpand=True)
+        self.replace_entry.update_property([Gtk.AccessibleProperty.LABEL], ["Replace with"])
         self.replace_entry.connect("activate", lambda *_: self.replace_one())
-        replace_button = Gtk.Button(label="Reemplazar")
+        replace_button = Gtk.Button(label="Replace")
         replace_button.connect("clicked", lambda *_: self.replace_one())
-        replace_all_button = Gtk.Button(label="Reemplazar todo")
+        replace_all_button = Gtk.Button(label="Replace all")
         replace_all_button.connect("clicked", lambda *_: self.replace_all())
         self.replace_row = Gtk.Box(spacing=6, visible=False)
         for widget in (self.replace_entry, replace_button, replace_all_button):
@@ -288,19 +288,19 @@ class SearchBar(Gtk.Revealer):
             return
         error = self.context.get_regex_error()
         if error is not None:
-            self.count_label.set_text("Regex no válida")
+            self.count_label.set_text("Invalid regex")
             return
         total = self.context.get_occurrences_count()
         if total < 0:
-            return  # aún se está calculando
+            return  # still being computed
         bounds = self.buffer.get_selection_bounds()
         position = self.context.get_occurrence_position(*bounds) if bounds else -1
         if total == 0:
-            self.count_label.set_text("Sin resultados")
+            self.count_label.set_text("No results")
         elif position > 0:
-            self.count_label.set_text(f"{position} de {total}")
+            self.count_label.set_text(f"{position} of {total}")
         else:
-            self.count_label.set_text(f"{total} resultados")
+            self.count_label.set_text(f"{total} results")
 
     def find(self, forward: bool, from_selection_start: bool = False) -> bool:
         if not self.settings.get_search_text():
@@ -338,11 +338,11 @@ class SearchBar(Gtk.Revealer):
         except GLib.Error as exc:
             self.count_label.set_text(exc.message)
             return
-        self.count_label.set_text(f"{count} reemplazos")
+        self.count_label.set_text(f"{count} replaced")
 
 
 class CodeEditor(Gtk.Box):
-    """Widget de edición completo: barra de búsqueda + vista de código."""
+    """Complete editing widget: search bar + code view."""
 
     __gtype_name__ = "MksCodeEditor"
     __gsignals__ = {
@@ -366,7 +366,7 @@ class CodeEditor(Gtk.Box):
         self.view.set_left_margin(6)
         self.view.set_editable(not read_only)
         self.view.set_cursor_visible(not read_only)
-        self.view.update_property([Gtk.AccessibleProperty.LABEL], ["Editor de código Bash"])
+        self.view.update_property([Gtk.AccessibleProperty.LABEL], ["Bash code editor"])
         self.read_only = read_only
 
         self.engine = CompletionEngine()
@@ -405,14 +405,14 @@ class CodeEditor(Gtk.Box):
         self.buffer.connect("modified-changed", lambda b: self.emit("modified-changed", b.get_modified()))
         self.connect("destroy", lambda *_: self.popup.unparent())
 
-    # -- texto -------------------------------------------------------------
+    # -- text ----------------------------------------------------------------
 
     def get_text(self) -> str:
         start, end = self.buffer.get_bounds()
         return self.buffer.get_text(start, end, True)
 
     def set_text(self, text: str, modified: bool = False) -> None:
-        """Sustituye el contenido sin poder deshacerlo (al abrir un archivo)."""
+        """Replace the content without undo history (used when opening a file)."""
         self._suppress_completion = True
         self.popup.dismiss()
         self.buffer.begin_irreversible_action()
@@ -424,7 +424,7 @@ class CodeEditor(Gtk.Box):
         self.clear_diagnostics()
 
     def replace_text(self, text: str) -> None:
-        """Sustituye el contenido como una acción que se puede deshacer."""
+        """Replace the content as an undoable action."""
         self._suppress_completion = True
         self.buffer.begin_user_action()
         start, end = self.buffer.get_bounds()
@@ -454,7 +454,7 @@ class CodeEditor(Gtk.Box):
         return it.get_line(), it.get_line_offset()
 
     def goto_line(self, line: int, column: int = 0) -> None:
-        """``line`` y ``column`` empiezan en 1, como en los mensajes de diagnóstico."""
+        """``line`` and ``column`` start at 1, as in diagnostic messages."""
         it = iter_at_line(self.buffer, line - 1, max(0, column - 1))
         self.buffer.place_cursor(it)
         self.view.scroll_to_mark(self.buffer.get_insert(), 0.25, True, 0.0, 0.4)
@@ -463,7 +463,7 @@ class CodeEditor(Gtk.Box):
     def focus(self) -> None:
         self.view.grab_focus()
 
-    # -- preferencias ----------------------------------------------------------
+    # -- preferences ----------------------------------------------------------
 
     def apply_preferences(self, prefs: Preferences) -> None:
         self.view.set_tab_width(prefs.editor_tab_width)
@@ -490,7 +490,7 @@ class CodeEditor(Gtk.Box):
     def set_base_directory(self, directory: Path | None) -> None:
         self.engine.base_directory = directory
 
-    # -- diagnósticos ------------------------------------------------------
+    # -- diagnostics ------------------------------------------------------
 
     def _create_diagnostic_marks(self) -> None:
         self._diagnostic_messages: dict[int, list[str]] = {}
@@ -534,7 +534,7 @@ class CodeEditor(Gtk.Box):
             code = f"{diagnostic.code}: " if diagnostic.code else ""
             self._diagnostic_messages.setdefault(diagnostic.line, []).append(f"{code}{diagnostic.message}")
 
-    # -- autocompletado ------------------------------------------------------
+    # -- autocompletion ---------------------------------------------------
 
     def _cursor_offset(self) -> int:
         return self.buffer.get_iter_at_mark(self.buffer.get_insert()).get_offset()
@@ -574,7 +574,7 @@ class CodeEditor(Gtk.Box):
         return False
 
     def _handle_tab(self) -> bool:
-        """Devuelve ``False`` si Tab debe comportarse como indentación normal."""
+        """Return ``False`` if Tab should behave as normal indentation."""
         action = resolve_tab(self.engine, self.get_text(), self._cursor_offset())
         if action.kind is TabActionKind.INDENT:
             return False
@@ -611,7 +611,7 @@ class CodeEditor(Gtk.Box):
         self._replace_range(context.start, offset, candidate.insert_text)
         self.view.grab_focus()
         if candidate.kind is CompletionKind.PATH and candidate.insert_text.endswith("/"):
-            # Al entrar en una carpeta se ofrecen directamente sus contenidos.
+            # After entering a folder, offer its contents right away.
             GLib.idle_add(self._idle_refresh, True)
 
     def _replace_range(self, start_offset: int, end_offset: int, text: str) -> None:

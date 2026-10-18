@@ -1,4 +1,4 @@
-"""Modelos del generador: parámetros, plantillas y configuración de generación."""
+"""Generator models: parameters, templates and generation settings."""
 
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ class ParamType(Enum):
     INT = "int"
     BOOL = "bool"
     CHOICE = "choice"
-    #: Lista de valores separados por comas.
+    #: Comma-separated list of values.
     LIST = "list"
 
 
@@ -30,7 +30,7 @@ class RiskLevel(Enum):
 
     @property
     def label(self) -> str:
-        return {"low": "Riesgo bajo", "medium": "Riesgo medio", "high": "Riesgo alto"}[self.value]
+        return {"low": "Low risk", "medium": "Medium risk", "high": "High risk"}[self.value]
 
 
 @dataclass(frozen=True)
@@ -50,47 +50,47 @@ class TemplateParam:
     choices: tuple[tuple[str, str], ...] = ()
     minimum: int | None = None
     maximum: int | None = None
-    #: Comprobación adicional: devuelve un mensaje de error o ``None``.
+    #: Extra check: returns an error message or ``None``.
     check: Callable[[Any], str | None] | None = None
 
     def coerce(self, raw: Any) -> Any:
-        """Convierte un valor de la interfaz al tipo del parámetro (``ValueError`` si no es válido)."""
+        """Convert a UI value to the parameter type (``ValueError`` if invalid)."""
         if self.type is ParamType.BOOL:
             if isinstance(raw, bool):
                 return raw
-            if isinstance(raw, str) and raw.strip().lower() in {"true", "false", "1", "0", "sí", "si", "no"}:
-                return raw.strip().lower() in {"true", "1", "sí", "si"}
-            raise ValueError("Debe ser sí o no")
+            if isinstance(raw, str) and raw.strip().lower() in {"true", "false", "1", "0", "yes", "no"}:
+                return raw.strip().lower() in {"true", "1", "yes"}
+            raise ValueError("Must be yes or no")
 
         if self.type is ParamType.INT:
             if isinstance(raw, bool):
-                raise ValueError("Debe ser un número entero")
+                raise ValueError("Must be an integer")
             try:
                 value = int(str(raw).strip())
             except ValueError:
-                raise ValueError("Debe ser un número entero") from None
+                raise ValueError("Must be an integer") from None
             if self.minimum is not None and value < self.minimum:
-                raise ValueError(f"El mínimo es {self.minimum}")
+                raise ValueError(f"The minimum is {self.minimum}")
             if self.maximum is not None and value > self.maximum:
-                raise ValueError(f"El máximo es {self.maximum}")
+                raise ValueError(f"The maximum is {self.maximum}")
             return value
 
         if self.type is ParamType.LIST:
             items = raw if isinstance(raw, (list, tuple)) else str(raw).split(",")
             values = [str(item).strip() for item in items if str(item).strip()]
             if self.required and not values:
-                raise ValueError("Indica al menos un valor")
+                raise ValueError("Enter at least one value")
             return values
 
         if not isinstance(raw, str):
-            raise ValueError("Debe ser texto")
+            raise ValueError("Must be text")
         value = raw.strip()
         if self.required and not value:
-            raise ValueError("Este campo es obligatorio")
+            raise ValueError("This field is required")
         if "\n" in value or "\0" in value:
-            raise ValueError("No puede contener saltos de línea")
+            raise ValueError("Cannot contain line breaks")
         if self.type is ParamType.CHOICE and value not in {key for key, _ in self.choices}:
-            raise ValueError("Opción no válida")
+            raise ValueError("Invalid option")
         return value
 
     def validate(self, raw: Any) -> tuple[Any, str | None]:
@@ -107,16 +107,16 @@ class TemplateParam:
 
 @dataclass
 class TemplateBody:
-    """Fragmentos que una plantilla aporta al script; el motor los ensambla."""
+    """Fragments a template contributes to the script; the engine assembles them."""
 
-    #: Variables y constantes globales.
+    #: Global variables and constants.
     globals: list[str] = field(default_factory=list)
-    #: Funciones auxiliares (cada elemento es una función completa).
+    #: Helper functions (each item is a complete function).
     functions: list[str] = field(default_factory=list)
-    #: Cuerpo de ``main`` sin indentar.
+    #: Body of ``main``, unindented.
     main: list[str] = field(default_factory=list)
     uses_logging: bool = False
-    #: Línea de uso para la cabecera si depende de los parámetros.
+    #: Usage line for the header when it depends on the parameters.
     usage: str | None = None
 
 
@@ -126,15 +126,15 @@ class Template:
     name: str
     description: str
     category: str
-    #: Descripción por defecto del script generado.
+    #: Default description of the generated script.
     script_description: str
     usage: str = ""
     params: tuple[TemplateParam, ...] = ()
     risk: Risk = Risk(RiskLevel.LOW)
     build: Callable[[BuildContext], TemplateBody] | None = None
-    #: Validación que relaciona varios parámetros: devuelve ``{clave: error}``.
+    #: Validation across several parameters: returns ``{key: error}``.
     cross_check: Callable[[Mapping[str, Any]], dict[str, str]] | None = None
-    #: Código literal de una plantilla personalizada (sustituye a ``build``).
+    #: Literal code of a custom template (replaces ``build``).
     custom_body: str | None = None
     tags: tuple[str, ...] = ()
 
@@ -146,7 +146,7 @@ class Template:
         return {p.key: p.default for p in self.params}
 
     def validate(self, raw_values: Mapping[str, Any]) -> tuple[dict[str, Any], dict[str, str]]:
-        """Devuelve ``(valores, errores)``; los parámetros ausentes toman su valor por defecto."""
+        """Return ``(values, errors)``; missing parameters take their default value."""
         values: dict[str, Any] = {}
         errors: dict[str, str] = {}
         for param in self.params:

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Esquema de colores de MKSCRIPT Studio para GtkSourceView 5 (claro). -->
-<style-scheme id="mkscript-light" name="MKSCRIPT Claro" version="1.0">
+<!-- MKSCRIPT Studio color scheme for GtkSourceView 5 (light). -->
+<style-scheme id="mkscript-light" name="MKSCRIPT Light" version="1.0">
   <author>MKSCRIPT Studio</author>
-  <description>Claro con acentos turquesa</description>
+  <description>Light with teal accents</description>
 
   <color name="bg" value="#fbfcfd"/>
   <color name="bg-line" value="#eef3f4"/>

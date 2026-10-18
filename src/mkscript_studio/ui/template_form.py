@@ -1,4 +1,4 @@
-"""Formulario de parámetros de una plantilla y vista previa del código."""
+"""Template parameter form and risk summary."""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ from mkscript_studio.ui.common import choose_folder, tilde_path  # noqa: E402
 
 
 class TemplateForm(Gtk.Box):
-    """Genera los controles adecuados para cada tipo de parámetro."""
+    """Build the right control for each parameter type."""
 
     __gtype_name__ = "MksTemplateForm"
 
@@ -39,7 +39,7 @@ class TemplateForm(Gtk.Box):
         if template is None or not template.params:
             return
         values = {**template.default_values(), **(values or {})}
-        group = Adw.PreferencesGroup(title="Parámetros")
+        group = Adw.PreferencesGroup(title="Parameters")
         for param in template.params:
             row = self._build_row(param, values.get(param.key, param.default))
             self._rows[param.key] = row
@@ -83,7 +83,7 @@ class TemplateForm(Gtk.Box):
         self._getters[param.key] = entry_row.get_text
         if param.type is ParamType.PATH:
             button = Gtk.Button(icon_name="folder-open-symbolic", valign=Gtk.Align.CENTER,
-                                tooltip_text="Elegir carpeta")
+                                tooltip_text="Choose folder")
             button.add_css_class("flat")
             button.connect("clicked", lambda _b: self._pick_folder(entry_row))
             entry_row.add_suffix(button)
@@ -109,14 +109,14 @@ class TemplateForm(Gtk.Box):
 
 
 def risk_banner(template: Template) -> Gtk.Widget:
-    """Bloque que resume el nivel de riesgo y sus notas."""
+    """Block summarizing the risk level and its notes."""
     box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
     box.add_css_class("mks-risk")
     box.add_css_class(f"risk-{template.risk.level.value}")
     title = Gtk.Label(label=template.risk.level.label, xalign=0)
     title.add_css_class("heading")
     box.append(title)
-    notes = template.risk.notes or ("Revisa el código antes de ejecutarlo.",)
+    notes = template.risk.notes or ("Review the code before running it.",)
     for note in notes:
         item = Gtk.Label(label=f"• {note}", xalign=0, wrap=True)
         item.add_css_class("caption")

@@ -1,6 +1,6 @@
-"""Motor de autocompletado para Bash, independiente de GTK.
+"""Bash autocompletion engine, independent of GTK.
 
-El contenido del editor solo se analiza como texto: nunca se ejecuta.
+The editor content is only analyzed as text: it is never executed.
 """
 
 from __future__ import annotations
@@ -23,13 +23,13 @@ from mkscript_studio.editor.bash_words import (
 
 
 class CompletionKind(Enum):
-    FUNCTION = "función"
-    KEYWORD = "palabra reservada"
+    FUNCTION = "function"
+    KEYWORD = "keyword"
     BUILTIN = "builtin"
-    COMMAND = "orden"
-    SYSTEM_COMMAND = "orden del sistema"
+    COMMAND = "command"
+    SYSTEM_COMMAND = "system command"
     VARIABLE = "variable"
-    PATH = "ruta"
+    PATH = "path"
 
 
 _KIND_ORDER = {
@@ -55,7 +55,7 @@ class ContextKind(Enum):
 @dataclass(frozen=True)
 class Candidate:
     label: str
-    #: Texto que sustituye al prefijo (``context.start``..``context.end``).
+    #: Text that replaces the prefix (``context.start``..``context.end``).
     insert_text: str
     kind: CompletionKind
     detail: str = ""
@@ -67,7 +67,7 @@ class CompletionContext:
     prefix: str = ""
     start: int = 0
     end: int = 0
-    #: Longitud del nombre escrito (sin «$», «${» ni la parte de directorio).
+    #: Length of the typed name (without "$", "${" or the directory part).
     name_length: int = 0
 
 
@@ -85,7 +85,7 @@ _FOR_IN_RE = re.compile(rf"\b(?:for|select)\s+{_IDENTIFIER}$|\bcase\s+\S+$")
 
 
 def _line_state(before: str) -> str:
-    """Devuelve ``code``, ``single``, ``double`` o ``comment`` al final de ``before``."""
+    """Return ``code``, ``single``, ``double`` or ``comment`` at the end of ``before``."""
     state = "code"
     escaped = False
     previous = " "
@@ -137,7 +137,7 @@ def defined_variables(text: str) -> list[str]:
     for match in _FOR_RE.finditer(code):
         add(match.group(1))
     for match in _READ_RE.finditer(code):
-        # Los nombres de variable son las últimas palabras de la orden.
+        # Variable names are the last words of the command.
         for word in reversed(match.group(1).split()):
             if not re.fullmatch(_IDENTIFIER, word):
                 break
@@ -146,7 +146,7 @@ def defined_variables(text: str) -> list[str]:
 
 
 def scan_path_commands(path_env: str | None = None, limit: int = 5000) -> list[str]:
-    """Nombres de ejecutables del PATH (solo se listan; no se ejecutan)."""
+    """Names of executables on PATH (only listed; never executed)."""
     found: set[str] = set()
     for directory in (path_env if path_env is not None else os.environ.get("PATH", "")).split(os.pathsep):
         try:
@@ -166,15 +166,15 @@ def scan_path_commands(path_env: str | None = None, limit: int = 5000) -> list[s
 
 @dataclass
 class CompletionEngine:
-    #: Proveedor perezoso de órdenes del sistema (``None`` = desactivado).
+    #: Lazy provider of system commands (``None`` = disabled).
     system_commands: Callable[[], Iterable[str]] | None = None
-    #: Directorio para completar rutas relativas (el del documento).
+    #: Directory used to complete relative paths (the document's folder).
     base_directory: Path | None = None
     max_results: int = 60
     max_directory_entries: int = 500
     _system_cache: list[str] | None = field(default=None, init=False, repr=False)
 
-    # -- contexto ----------------------------------------------------------
+    # -- context -------------------------------------------------------------
 
     def context_at(self, text: str, offset: int) -> CompletionContext:
         offset = max(0, min(offset, len(text)))
@@ -200,7 +200,7 @@ class CompletionEngine:
 
         preceding = before[: len(before) - len(token)].rstrip()
         last_word = preceding.split()[-1] if preceding.split() else ""
-        # «)» abre una orden tras un patrón de case, pero no tras $(…) ni ((…)).
+        # ")" starts a command after a case pattern, but not after $(...) or ((...)).
         closes_case_pattern = preceding.endswith(")") and "$(" not in preceding and "((" not in preceding
         is_command = (
             not preceding
@@ -212,16 +212,16 @@ class CompletionEngine:
         kind = ContextKind.COMMAND if is_command else ContextKind.ARGUMENT
         return CompletionContext(kind, token, start, offset, len(token))
 
-    # -- candidatos --------------------------------------------------------
+    # -- candidates --------------------------------------------------------
 
     def complete(self, text: str, offset: int, explicit: bool = True, min_chars: int = 1) -> tuple[CompletionContext, list[Candidate]]:
-        """Candidatos en ``offset``. Con ``explicit=False`` (mientras se escribe) se exige ``min_chars``."""
+        """Candidates at ``offset``. With ``explicit=False`` (while typing) ``min_chars`` is required."""
         context = self.context_at(text, offset)
         if context.kind is ContextKind.NONE:
             return context, []
         if not explicit and context.name_length < min_chars:
             return context, []
-        # El análisis del archivo ignora la palabra en curso para no sugerirla a sí misma.
+        # The word being typed is excluded from file analysis so it is not suggested to itself.
         word_end = offset
         while word_end < len(text) and (text[word_end].isalnum() or text[word_end] in "_-."):
             word_end += 1
@@ -247,7 +247,7 @@ class CompletionEngine:
                 pool[name] = Candidate(name, name, kind, detail)
 
         for name in defined_functions(rest):
-            add(name, CompletionKind.FUNCTION, "definida en este archivo")
+            add(name, CompletionKind.FUNCTION, "defined in this file")
         for name, detail in BUILTINS.items():
             add(name, CompletionKind.BUILTIN, detail)
         for name, detail in KEYWORDS.items():
@@ -271,7 +271,7 @@ class CompletionEngine:
     def _variables(self, context: CompletionContext, rest: str, next_char: str) -> list[Candidate]:
         braced = context.prefix.startswith("${")
         name_prefix = context.prefix[2:] if braced else context.prefix[1:]
-        names: dict[str, str] = {name: "definida en este archivo" for name in defined_variables(rest)}
+        names: dict[str, str] = {name: "defined in this file" for name in defined_variables(rest)}
         for name, detail in WELL_KNOWN_VARIABLES.items():
             names.setdefault(name, detail)
         result = []
@@ -283,18 +283,18 @@ class CompletionEngine:
             else:
                 insert = "$" + name
             result.append((index, Candidate(name, insert, CompletionKind.VARIABLE, detail)))
-        # Primero las del archivo (en orden de aparición), luego las conocidas.
+        # File variables first (in order of appearance), then the well-known ones.
         return [candidate for _, candidate in sorted(result, key=lambda item: item[0])]
 
     def _paths(self, context: CompletionContext) -> list[Candidate]:
         token = context.prefix
         if "/" not in token:
-            return [Candidate("~/", "~/", CompletionKind.PATH, "carpeta personal")] if token == "~" else []
+            return [Candidate("~/", "~/", CompletionKind.PATH, "home folder")] if token == "~" else []
         directory_part, name_prefix = token.rsplit("/", 1)
         directory_part += "/"
         if directory_part.startswith("~"):
             if not (directory_part == "~/" or directory_part.startswith("~/")):
-                return []  # ~usuario no se expande
+                return []  # ~user is not expanded
             directory = Path.home() / directory_part[2:]
         elif directory_part.startswith("/"):
             directory = Path(directory_part)
@@ -318,7 +318,7 @@ class CompletionEngine:
                         is_dir = False
                     suffix = "/" if is_dir else ""
                     candidates.append(Candidate(entry.name + suffix, directory_part + entry.name + suffix,
-                                                CompletionKind.PATH, "carpeta" if is_dir else "archivo"))
+                                                CompletionKind.PATH, "folder" if is_dir else "file"))
         except OSError:
             return []
         return sorted(candidates, key=lambda c: (not c.label.endswith("/"), c.label.lower()))
@@ -335,15 +335,15 @@ def _rank(candidate: Candidate) -> tuple:
 
 
 # ---------------------------------------------------------------------------
-# Comportamiento de la tecla Tab
+# Tab key behavior
 # ---------------------------------------------------------------------------
 
 class TabActionKind(Enum):
-    #: No hay nada que completar: el editor debe indentar como siempre.
+    #: Nothing to complete: the editor should indent as usual.
     INDENT = "indent"
-    #: Una única coincidencia: sustituir el prefijo directamente.
+    #: A single match: replace the prefix directly.
     COMPLETE = "complete"
-    #: Varias coincidencias: (opcionalmente ampliar el prefijo común y) mostrar la lista.
+    #: Several matches: (optionally extend to the common prefix and) show the list.
     SHOW = "show"
 
 
@@ -361,7 +361,7 @@ def common_prefix(values: list[str]) -> str:
 
 
 def resolve_tab(engine: CompletionEngine, text: str, offset: int) -> TabAction:
-    """Decide qué hace Tab en ``offset``; solo se sustituye el prefijo anterior al cursor."""
+    """Decide what Tab does at ``offset``; only the prefix before the cursor is replaced."""
     context, candidates = engine.complete(text, offset, explicit=True)
     if context.kind is ContextKind.NONE or not context.prefix or not candidates:
         return TabAction(TabActionKind.INDENT)

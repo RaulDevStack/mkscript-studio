@@ -1,4 +1,4 @@
-"""Servicios compartidos por la interfaz (sin dependencias de GTK)."""
+"""Services shared by the UI (no GTK dependencies)."""
 
 from __future__ import annotations
 

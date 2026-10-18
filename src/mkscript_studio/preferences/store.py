@@ -1,4 +1,4 @@
-"""Persistencia de preferencias en ``$XDG_CONFIG_HOME/mkscript-studio``."""
+"""Preferences persistence in ``$XDG_CONFIG_HOME/mkscript-studio``."""
 
 from __future__ import annotations
 
@@ -27,11 +27,11 @@ class PreferencesStore:
         if result.error:
             self.warnings.append(result.error)
         if result.quarantined:
-            self.warnings.append(f"Se guardó una copia del archivo dañado en {result.quarantined}")
+            self.warnings.append(f"A copy of the damaged file was saved to {result.quarantined}")
         prefs, warnings = preferences_from_dict(result.data)
         self.warnings.extend(warnings)
         if isinstance(result.data, dict):
-            # Se conservan claves desconocidas (p. ej. de versiones futuras).
+            # Unknown keys are kept (e.g. from newer versions).
             known = {f.name for f in fields(Preferences)} | {"version"}
             self._extra = {k: v for k, v in result.data.items() if k not in known}
         return prefs
@@ -40,7 +40,7 @@ class PreferencesStore:
         self._listeners.append(listener)
 
     def update(self, **changes: Any) -> Preferences:
-        """Valida y guarda los cambios; si alguno es inválido no se guarda nada."""
+        """Validate and save the changes; if any is invalid, nothing is saved."""
         validated = {name: validate_field(name, value) for name, value in changes.items()}
         changed = {n for n, v in validated.items() if getattr(self.preferences, n) != v}
         if not changed:

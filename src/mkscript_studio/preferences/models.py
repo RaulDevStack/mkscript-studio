@@ -1,4 +1,4 @@
-"""Modelo de preferencias y su validación."""
+"""Preferences model and validation."""
 
 from __future__ import annotations
 
@@ -10,17 +10,17 @@ from mkscript_studio.paths import expand_user_path
 
 SCHEMA_VERSION = 1
 
-#: Shells cuya generación está implementada. Zsh y POSIX sh se anunciarán
-#: aquí cuando el motor sepa producir código correcto para ellos.
+#: Shells the generator can produce code for. Zsh and POSIX sh will be listed
+#: here once the engine can generate correct code for them.
 SUPPORTED_SHELLS: dict[str, str] = {"bash": "Bash"}
 
 COMMENT_STYLES: dict[str, str] = {
-    "explanatory": "Explicativos",
-    "minimal": "Mínimos",
-    "none": "Sin comentarios",
+    "explanatory": "Explanatory",
+    "minimal": "Minimal",
+    "none": "No comments",
 }
 
-THEMES: dict[str, str] = {"dark": "Oscuro", "light": "Claro", "system": "Según el sistema"}
+THEMES: dict[str, str] = {"dark": "Dark", "light": "Light", "system": "Follow system"}
 
 
 @dataclass
@@ -30,7 +30,7 @@ class Preferences:
     strict_mode: bool = True
     color_output: bool = True
     backup_before_overwrite: bool = True
-    #: Carpeta para las copias; vacío = junto al archivo original.
+    #: Folder for backups; empty = next to the original file.
     backup_directory: str = ""
     open_after_generate: bool = True
     output_directory: str = "~/Scripts"
@@ -76,26 +76,26 @@ _INT_RANGES: dict[str, tuple[int, int]] = {
 
 
 def validate_field(name: str, value: Any) -> Any:
-    """Valida un valor y lo devuelve normalizado; lanza ``ValueError`` si no es válido."""
+    """Validate a value and return it normalized; raise ``ValueError`` if invalid."""
     default = getattr(Preferences(), name)
     if isinstance(default, bool):
         if not isinstance(value, bool):
-            raise ValueError(f"{name} debe ser verdadero o falso")
+            raise ValueError(f"{name} must be true or false")
         return value
     if isinstance(default, int):
         if isinstance(value, bool) or not isinstance(value, int):
-            raise ValueError(f"{name} debe ser un número entero")
+            raise ValueError(f"{name} must be an integer")
         low, high = _INT_RANGES[name]
         if not low <= value <= high:
-            raise ValueError(f"{name} debe estar entre {low} y {high}")
+            raise ValueError(f"{name} must be between {low} and {high}")
         return value
     if not isinstance(value, str):
-        raise ValueError(f"{name} debe ser texto")
+        raise ValueError(f"{name} must be text")
     if name in _CHOICES and value not in _CHOICES[name]:
         allowed = ", ".join(_CHOICES[name])
-        raise ValueError(f"{name}={value!r} no es válido (opciones: {allowed})")
+        raise ValueError(f"{name}={value!r} is not valid (options: {allowed})")
     if name == "output_directory":
-        expand_user_path(value)  # rechaza rutas vacías
+        expand_user_path(value)  # rejects empty paths
         return value.strip()
     if name == "backup_directory":
         return value.strip()
@@ -103,20 +103,20 @@ def validate_field(name: str, value: Any) -> Any:
 
 
 def preferences_from_dict(data: Any) -> tuple[Preferences, list[str]]:
-    """Construye unas preferencias válidas a partir de datos arbitrarios.
+    """Build valid preferences from arbitrary data.
 
-    Los campos ausentes o inválidos toman su valor predeterminado; se devuelve
-    la lista de avisos para que la interfaz pueda informar al usuario.
+    Missing or invalid fields fall back to their defaults; the list of warnings
+    is returned so the UI can tell the user.
     """
     prefs = Preferences()
     warnings: list[str] = []
     if not isinstance(data, dict):
-        return prefs, ["El archivo de preferencias no contiene un objeto JSON; se usan los valores predeterminados"]
+        return prefs, ["The preferences file does not contain a JSON object; using defaults"]
     for field in fields(Preferences):
         if field.name not in data:
             continue
         try:
             setattr(prefs, field.name, validate_field(field.name, data[field.name]))
         except ValueError as exc:
-            warnings.append(f"{exc}; se usa el valor predeterminado")
+            warnings.append(f"{exc}; using the default value")
     return prefs, warnings

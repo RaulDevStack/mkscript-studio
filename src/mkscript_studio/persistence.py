@@ -1,8 +1,8 @@
-"""Lectura y escritura segura de documentos JSON de la aplicación.
+"""Safe reading and writing of the application's JSON documents.
 
-Todos los almacenes (preferencias, estado, proyectos, plantillas propias)
-usan estas funciones: la escritura es atómica (archivo temporal + ``os.replace``)
-y un archivo corrupto se aparta con un nombre fechado en lugar de borrarse.
+Every store (preferences, state, projects, custom templates) uses these
+functions: writes are atomic (temporary file + ``os.replace``) and a corrupt
+file is moved aside under a timestamped name instead of being deleted.
 """
 
 from __future__ import annotations
@@ -19,13 +19,13 @@ from typing import Any
 @dataclass
 class JsonLoadResult:
     data: Any
-    #: Ruta a la que se movió un archivo ilegible, si se encontró uno.
+    #: Where an unreadable file was moved to, if one was found.
     quarantined: Path | None = None
     error: str | None = None
 
 
 def atomic_write_text(path: Path, text: str, mode: int | None = None) -> None:
-    """Escribe ``text`` en ``path`` sin dejar nunca un archivo a medias."""
+    """Write ``text`` to ``path`` without ever leaving a half-written file."""
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, tmp_name = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp")
     try:
@@ -49,7 +49,7 @@ def write_json(path: Path, data: Any) -> None:
 
 
 def unique_sibling(path: Path, suffix: str) -> Path:
-    """Devuelve ``path`` + ``suffix`` (o con ``-N``) sin colisionar con nada existente."""
+    """Return ``path`` + ``suffix`` (or with ``-N``) without clashing with anything existing."""
     candidate = path.with_name(path.name + suffix)
     counter = 1
     while candidate.exists() or candidate.is_symlink():
@@ -59,13 +59,13 @@ def unique_sibling(path: Path, suffix: str) -> Path:
 
 
 def read_json(path: Path, default: Any) -> JsonLoadResult:
-    """Lee un JSON. Si no existe devuelve ``default``; si está corrupto lo aparta."""
+    """Read a JSON file. Returns ``default`` if missing; moves it aside if corrupt."""
     try:
         raw = path.read_text(encoding="utf-8")
     except FileNotFoundError:
         return JsonLoadResult(default)
     except OSError as exc:
-        return JsonLoadResult(default, error=f"No se pudo leer {path}: {exc.strerror or exc}")
+        return JsonLoadResult(default, error=f"Could not read {path}: {exc.strerror or exc}")
 
     try:
         return JsonLoadResult(json.loads(raw))
@@ -76,4 +76,4 @@ def read_json(path: Path, default: Any) -> JsonLoadResult:
             os.replace(path, target)
         except OSError:
             target = None
-        return JsonLoadResult(default, quarantined=target, error=f"{path.name} estaba dañado: {exc}")
+        return JsonLoadResult(default, quarantined=target, error=f"{path.name} was damaged: {exc}")

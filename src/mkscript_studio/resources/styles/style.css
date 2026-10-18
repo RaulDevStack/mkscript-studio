@@ -1,4 +1,4 @@
-/* Componentes propios de MKSCRIPT Studio. Los colores salen de la paleta activa. */
+/* MKSCRIPT Studio components. Colors come from the active palette. */
 
 .mks-brand {
   font-weight: 800;
@@ -101,7 +101,7 @@
 .severity-info,
 .severity-style { color: @accent_color; }
 
-/* Lista de autocompletado */
+/* Autocompletion list */
 popover.mks-completion > contents {
   padding: 4px;
 }

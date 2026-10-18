@@ -1,8 +1,8 @@
-"""Plantillas integradas y registro de plantillas (integradas + personalizadas).
+"""Built-in templates and the template registry (built-in + custom).
 
-Las plantillas no ejecutan nada al generarse: solo producen texto. Las que
-pueden modificar datos funcionan en modo simulación salvo que el script
-generado reciba ``--apply`` de forma explícita.
+Templates never run anything when generated: they only produce text. Those
+that can modify data run in dry-run mode unless the generated script is
+explicitly given ``--apply``.
 """
 
 from __future__ import annotations
@@ -30,10 +30,10 @@ from mkscript_studio.generator.models import (
 )
 from mkscript_studio.persistence import read_json, write_json
 
-CUSTOM_CATEGORY = "Personalizadas"
+CUSTOM_CATEGORY = "Custom"
 
 # ---------------------------------------------------------------------------
-# Comprobaciones reutilizables
+# Reusable checks
 # ---------------------------------------------------------------------------
 
 _PROTECTED_PATHS = {"/", "~", "/bin", "/boot", "/dev", "/etc", "/home", "/lib", "/lib64",
@@ -42,7 +42,7 @@ _PROTECTED_PATHS = {"/", "~", "/bin", "/boot", "/dev", "/etc", "/home", "/lib", 
 
 def _check_path(value: str) -> str | None:
     if not is_absolute_or_home(value):
-        return "Usa una ruta absoluta o que empiece por ~/"
+        return "Use an absolute path or one starting with ~/"
     return None
 
 
@@ -51,7 +51,7 @@ def _check_modifiable_path(value: str) -> str | None:
     if error:
         return error
     if path_key(value) in _PROTECTED_PATHS:
-        return "Por seguridad no se admite esta carpeta del sistema o la carpeta personal completa"
+        return "For safety, system folders and the whole home folder are not allowed"
     return None
 
 
@@ -67,9 +67,9 @@ def _regex_check(pattern: str, message: str):
 
 
 def _parse_args_function(options: list[tuple[str, str, str]], extra_cases: Iterable[str] = ()) -> str:
-    """Bucle de análisis de argumentos con -h/--help y las opciones indicadas.
+    """Argument parsing loop with -h/--help and the given options.
 
-    ``options`` contiene tuplas ``(patrón case, variable, valor)``.
+    ``options`` holds ``(case pattern, variable, value)`` tuples.
     """
     lines = [
         "parse_args() {",
@@ -81,7 +81,7 @@ def _parse_args_function(options: list[tuple[str, str, str]], extra_cases: Itera
         lines.append(f"            {pattern}) {variable}={value} ;;")
     lines += [f"            {case}" for case in extra_cases]
     lines += [
-        '            *) usage >&2; die "Argumento desconocido: $1" ;;',
+        '            *) usage >&2; die "Unknown argument: $1" ;;',
         "        esac",
         "        shift",
         "    done",
@@ -91,37 +91,37 @@ def _parse_args_function(options: list[tuple[str, str, str]], extra_cases: Itera
 
 
 # ---------------------------------------------------------------------------
-# 1. Script mínimo
+# 1. Minimal script
 # ---------------------------------------------------------------------------
 
 def _build_minimal(ctx: BuildContext) -> TemplateBody:
-    main = ctx.explain("Escribe aquí la lógica principal. Los argumentos están en \"$@\".")
+    main = ctx.explain("Write the main logic here. The arguments are in \"$@\".")
     main.append(f"echo {single_quote(ctx.values['message'])}")
     return TemplateBody(main=main)
 
 
 MINIMAL = Template(
     id="minimal",
-    name="Script mínimo",
-    description="Punto de partida limpio: cabecera, modo estricto opcional y una función main.",
-    category="Básicos",
-    script_description="Muestra un mensaje de bienvenida.",
-    usage="[argumentos]",
+    name="Minimal script",
+    description="A clean starting point: header, optional strict mode and a main function.",
+    category="Basics",
+    script_description="Prints a welcome message.",
+    usage="[arguments]",
     params=(
-        TemplateParam("message", "Mensaje", ParamType.TEXT, "Hola desde MKSCRIPT Studio",
-                      "Texto que muestra el script con echo."),
+        TemplateParam("message", "Message", ParamType.TEXT, "Hello from MKSCRIPT Studio",
+                      "Text the script prints with echo."),
     ),
-    risk=Risk(RiskLevel.LOW, ("Solo muestra un mensaje; revisa los riesgos de la lógica que añadas.",)),
+    risk=Risk(RiskLevel.LOW, ("Only prints a message; review the risks of any logic you add.",)),
     build=_build_minimal,
-    tags=("inicio", "main", "echo"),
+    tags=("start", "main", "echo"),
 )
 
 # ---------------------------------------------------------------------------
-# 2. Herramienta CLI con argumentos
+# 2. CLI tool with arguments
 # ---------------------------------------------------------------------------
 
 def _flag_var(flag: str) -> str:
-    # Los prefijos evitan pisar variables como PATH o HOME.
+    # The prefix avoids clobbering variables such as PATH or HOME.
     return "OPT_" + flag.upper().replace("-", "_")
 
 
@@ -133,7 +133,7 @@ def _build_cli(ctx: BuildContext) -> TemplateBody:
     pos_usage = f"<{positional}>" if required else f"[{positional}]"
 
     globals_ = ['readonly SCRIPT_NAME="${0##*/}"', f"readonly VERSION={single_quote(ctx.values['version'])}", ""]
-    globals_ += ctx.explain("Estado de las opciones; parse_args lo modifica.")
+    globals_ += ctx.explain("Option state; parse_args updates it.")
     globals_ += [f"{_flag_var(flag)}=false" for flag in flags]
     globals_.append(f'{pos_var}=""')
 
@@ -141,13 +141,13 @@ def _build_cli(ctx: BuildContext) -> TemplateBody:
     help_lines = [
         "usage() {",
         "    cat <<EOF",
-        f"Uso: ${{SCRIPT_NAME}} [opciones] {pos_usage}",
+        f"Usage: ${{SCRIPT_NAME}} [options] {pos_usage}",
         "",
-        "Opciones:",
-        f"  -h, {'--help'.ljust(width)}  Muestra esta ayuda y termina",
-        f"  -V, {'--version'.ljust(width)}  Muestra la versión y termina",
+        "Options:",
+        f"  -h, {'--help'.ljust(width)}  Show this help and exit",
+        f"  -V, {'--version'.ljust(width)}  Show the version and exit",
     ]
-    help_lines += [f"      {f'--{flag}'.ljust(width)}  Activa la opción «{flag}»" for flag in flags]
+    help_lines += [f"      {f'--{flag}'.ljust(width)}  Enable the '{flag}' option" for flag in flags]
     help_lines += ["EOF", "}"]
 
     parse = [
@@ -160,7 +160,7 @@ def _build_cli(ctx: BuildContext) -> TemplateBody:
     parse += [f"            --{flag}) {_flag_var(flag)}=true ;;" for flag in flags]
     parse += [
         "            --) shift; break ;;",
-        '            -*) usage >&2; die "Opción desconocida: $1" ;;',
+        '            -*) usage >&2; die "Unknown option: $1" ;;',
         "            *) break ;;",
         "        esac",
         "        shift",
@@ -171,18 +171,18 @@ def _build_cli(ctx: BuildContext) -> TemplateBody:
         parse += [
             "    if [[ $# -lt 1 ]]; then",
             "        usage >&2",
-            f'        die "Falta el argumento {pos_usage}"',
+            f'        die "Missing argument {pos_usage}"',
             "    fi",
         ]
     parse += [
         f'    if [[ $# -gt 0 ]]; then {pos_var}="$1"; shift; fi',
-        '    [[ $# -eq 0 ]] || die "Sobran argumentos: $*"',
+        '    [[ $# -eq 0 ]] || die "Too many arguments: $*"',
         "}",
     ]
 
     main = ['parse_args "$@"', ""]
-    main += ctx.explain("Sustituye estas líneas por la lógica de la herramienta.")
-    main.append(f'info "{positional}: ${{{pos_var}:-(sin indicar)}}"')
+    main += ctx.explain("Replace these lines with the tool's logic.")
+    main.append(f'info "{positional}: ${{{pos_var}:-(not given)}}"')
     main += [f'info "--{flag}: ${{{_flag_var(flag)}}}"' for flag in flags]
 
     return TemplateBody(
@@ -190,49 +190,49 @@ def _build_cli(ctx: BuildContext) -> TemplateBody:
         functions=["\n".join(help_lines), "\n".join(parse)],
         main=main,
         uses_logging=True,
-        usage=f"[opciones] {pos_usage}",
+        usage=f"[options] {pos_usage}",
     )
 
 
 def _check_flags(values: list[str]) -> str | None:
-    error = _regex_check(r"[a-z][a-z0-9-]*", "Nombre de opción no válido (minúsculas, números y guiones)")(values)
+    error = _regex_check(r"[a-z][a-z0-9-]*", "Invalid option name (lowercase letters, digits and hyphens)")(values)
     if error:
         return error
     reserved = {"help", "version"} & set(values)
     if reserved:
-        return f"Opción reservada: {', '.join(sorted(reserved))}"
+        return f"Reserved option: {', '.join(sorted(reserved))}"
     if len(set(values)) != len(values):
-        return "Hay opciones repetidas"
+        return "There are duplicate options"
     return None
 
 
 CLI_TOOL = Template(
     id="cli-tool",
-    name="Herramienta CLI con argumentos",
-    description="Análisis de opciones con --help y --version, opciones booleanas y un argumento posicional.",
-    category="Básicos",
-    script_description="Herramienta de línea de órdenes con opciones y ayuda integrada.",
-    usage="[opciones] <argumento>",
+    name="CLI tool with arguments",
+    description="Option parsing with --help and --version, boolean flags and a positional argument.",
+    category="Basics",
+    script_description="Command-line tool with options and built-in help.",
+    usage="[options] <argument>",
     params=(
-        TemplateParam("version", "Versión", ParamType.TEXT, "0.1.0", "Se muestra con --version.",
-                      check=_regex_check(r"[0-9A-Za-z.+-]+", "Versión no válida")),
-        TemplateParam("flags", "Opciones booleanas", ParamType.LIST, ["verbose", "dry-run"],
-                      "Separadas por comas; cada una genera --opción.", required=False, check=_check_flags),
-        TemplateParam("positional", "Argumento posicional", ParamType.TEXT, "archivo",
-                      "Nombre del argumento (minúsculas).",
-                      check=_regex_check(r"[a-z][a-z0-9_]*", "Usa minúsculas, números o _")),
-        TemplateParam("positional_required", "Argumento obligatorio", ParamType.BOOL, True),
+        TemplateParam("version", "Version", ParamType.TEXT, "0.1.0", "Shown with --version.",
+                      check=_regex_check(r"[0-9A-Za-z.+-]+", "Invalid version")),
+        TemplateParam("flags", "Boolean flags", ParamType.LIST, ["verbose", "dry-run"],
+                      "Comma-separated; each one creates --flag.", required=False, check=_check_flags),
+        TemplateParam("positional", "Positional argument", ParamType.TEXT, "file",
+                      "Argument name (lowercase).",
+                      check=_regex_check(r"[a-z][a-z0-9_]*", "Use lowercase letters, digits or _")),
+        TemplateParam("positional_required", "Argument is required", ParamType.BOOL, True),
     ),
     risk=Risk(RiskLevel.LOW, (
-        "El script generado solo analiza argumentos y muestra los valores recibidos.",
-        "Revisa los riesgos de la lógica que añadas.",
+        "The generated script only parses arguments and prints the values it received.",
+        "Review the risks of any logic you add.",
     )),
     build=_build_cli,
-    tags=("argumentos", "opciones", "getopts", "ayuda"),
+    tags=("arguments", "options", "flags", "getopts", "help"),
 )
 
 # ---------------------------------------------------------------------------
-# 3. Copia de seguridad
+# 3. Backup
 # ---------------------------------------------------------------------------
 
 _COMPRESSION = {"gzip": ("z", ".tar.gz"), "xz": ("J", ".tar.xz"), "none": ("", ".tar")}
@@ -246,18 +246,18 @@ def _build_backup(ctx: BuildContext) -> TemplateBody:
         f"readonly EXCLUDES={array_literal(ctx.values['excludes'])}",
     ]
     main = [
-        'command -v tar >/dev/null 2>&1 || die "No se encontró el programa tar"',
-        '[[ -d "${SOURCE_DIR}" ]] || die "No existe el directorio de origen: ${SOURCE_DIR}"',
-        '[[ -r "${SOURCE_DIR}" ]] || die "No se puede leer el directorio de origen: ${SOURCE_DIR}"',
+        'command -v tar >/dev/null 2>&1 || die "tar was not found"',
+        '[[ -d "${SOURCE_DIR}" ]] || die "Source directory does not exist: ${SOURCE_DIR}"',
+        '[[ -r "${SOURCE_DIR}" ]] || die "Cannot read the source directory: ${SOURCE_DIR}"',
         'mkdir -p -- "${DEST_DIR}"',
         "",
         "local stamp archive",
         'stamp="$(date +%Y%m%d-%H%M%S)"',
         f'archive="${{DEST_DIR}}/$(basename -- "${{SOURCE_DIR}}")-${{stamp}}{extension}"',
     ]
-    main += ctx.explain("Nunca se sobrescribe una copia anterior.")
+    main += ctx.explain("A previous backup is never overwritten.")
     main += [
-        '[[ ! -e "${archive}" ]] || die "Ya existe ${archive}; no se sobrescribe"',
+        '[[ ! -e "${archive}" ]] || die "${archive} already exists; not overwriting it"',
         "",
         "local -a exclude_args=()",
         "local pattern",
@@ -265,12 +265,12 @@ def _build_backup(ctx: BuildContext) -> TemplateBody:
         '    exclude_args+=("--exclude=${pattern}")',
         "done",
         "",
-        'info "Creando ${archive}"',
+        'info "Creating ${archive}"',
     ]
-    main += ctx.explain("-C cambia al directorio padre para guardar rutas relativas en el archivo.")
+    main += ctx.explain("-C switches to the parent directory so the archive stores relative paths.")
     main += [
         f'tar -c{flag}f "${{archive}}" "${{exclude_args[@]}}" -C "$(dirname -- "${{SOURCE_DIR}}")" "$(basename -- "${{SOURCE_DIR}}")"',
-        'ok "Copia creada: ${archive} ($(du -h -- "${archive}" | cut -f1))"',
+        'ok "Backup created: ${archive} ($(du -h -- "${archive}" | cut -f1))"',
     ]
     return TemplateBody(globals=globals_, main=main, uses_logging=True)
 
@@ -278,39 +278,39 @@ def _build_backup(ctx: BuildContext) -> TemplateBody:
 def _backup_cross_check(values: Mapping[str, Any]) -> dict[str, str]:
     source, dest = path_key(values["source_dir"]), path_key(values["dest_dir"])
     if source == dest:
-        return {"dest_dir": "El destino no puede ser el mismo directorio que el origen"}
+        return {"dest_dir": "The destination cannot be the same directory as the source"}
     if dest.startswith(source.rstrip("/") + "/"):
-        return {"dest_dir": "El destino no puede estar dentro del origen (la copia se incluiría a sí misma)"}
+        return {"dest_dir": "The destination cannot be inside the source (the backup would include itself)"}
     return {}
 
 
 BACKUP = Template(
     id="backup",
-    name="Copia de seguridad",
-    description="Archiva un directorio en un .tar comprimido con fecha y hora, con exclusiones.",
-    category="Archivos",
-    script_description="Crea una copia comprimida y fechada de un directorio.",
+    name="Backup",
+    description="Archives a directory into a timestamped, compressed .tar file, with exclusions.",
+    category="Files",
+    script_description="Creates a compressed, timestamped backup of a directory.",
     params=(
-        TemplateParam("source_dir", "Directorio de origen", ParamType.PATH, "~/Documentos", check=_check_path),
-        TemplateParam("dest_dir", "Directorio de destino", ParamType.PATH, "~/Copias",
-                      "Se crea si no existe.", check=_check_path),
-        TemplateParam("compression", "Compresión", ParamType.CHOICE, "gzip",
-                      choices=(("gzip", "gzip (.tar.gz)"), ("xz", "xz (.tar.xz, más lenta)"), ("none", "Sin comprimir (.tar)"))),
-        TemplateParam("excludes", "Excluir", ParamType.LIST, [".cache", "node_modules"],
-                      "Patrones de tar --exclude, separados por comas.", required=False),
+        TemplateParam("source_dir", "Source directory", ParamType.PATH, "~/Documents", check=_check_path),
+        TemplateParam("dest_dir", "Destination directory", ParamType.PATH, "~/Backups",
+                      "Created if it does not exist.", check=_check_path),
+        TemplateParam("compression", "Compression", ParamType.CHOICE, "gzip",
+                      choices=(("gzip", "gzip (.tar.gz)"), ("xz", "xz (.tar.xz, slower)"), ("none", "Uncompressed (.tar)"))),
+        TemplateParam("excludes", "Exclude", ParamType.LIST, [".cache", "node_modules"],
+                      "tar --exclude patterns, comma-separated.", required=False),
     ),
     risk=Risk(RiskLevel.MEDIUM, (
-        "Crea un archivo nuevo en el destino; no borra ni modifica el origen.",
-        "Comprueba que el destino tiene espacio libre suficiente.",
-        "Las copias antiguas no se eliminan automáticamente.",
+        "Creates a new file in the destination; it never deletes or changes the source.",
+        "Make sure the destination has enough free space.",
+        "Old backups are not removed automatically.",
     )),
     build=_build_backup,
     cross_check=_backup_cross_check,
-    tags=("tar", "backup", "comprimir"),
+    tags=("tar", "backup", "archive", "compress"),
 )
 
 # ---------------------------------------------------------------------------
-# 4. Limpieza controlada de archivos temporales
+# 4. Controlled cleanup of temporary files
 # ---------------------------------------------------------------------------
 
 def _build_cleanup(ctx: BuildContext) -> TemplateBody:
@@ -326,14 +326,14 @@ def _build_cleanup(ctx: BuildContext) -> TemplateBody:
     usage = "\n".join([
         "usage() {",
         "    cat <<EOF",
-        'Uso: ${0##*/} [--apply] [--yes]',
+        'Usage: ${0##*/} [--apply] [--yes]',
         "",
-        "Busca archivos «${NAME_PATTERN}» con más de ${MIN_AGE_DAYS} días en ${TARGET_DIR}.",
-        "Sin --apply solo los muestra (simulación).",
+        "Finds files matching '${NAME_PATTERN}' older than ${MIN_AGE_DAYS} days in ${TARGET_DIR}.",
+        "Without --apply it only lists them (dry run).",
         "",
-        "  --apply    Borra los archivos encontrados",
-        "  -y, --yes  No pide confirmación antes de borrar",
-        "  -h, --help Muestra esta ayuda",
+        "  --apply    Delete the files found",
+        "  -y, --yes  Do not ask for confirmation before deleting",
+        "  -h, --help Show this help",
         "EOF",
         "}",
     ])
@@ -341,19 +341,19 @@ def _build_cleanup(ctx: BuildContext) -> TemplateBody:
     check = "\n".join([
         "resolve_target() {",
         "    local resolved home",
-        '    [[ -d "${TARGET_DIR}" ]] || die "No existe el directorio: ${TARGET_DIR}"',
+        '    [[ -d "${TARGET_DIR}" ]] || die "Directory does not exist: ${TARGET_DIR}"',
         '    resolved="$(cd -- "${TARGET_DIR}" && pwd -P)"',
         '    home="$(cd -- "${HOME}" && pwd -P)"',
         '    case "${resolved}" in',
         "        /|/bin|/boot|/dev|/etc|/home|/lib|/lib64|/opt|/proc|/root|/sbin|/sys|/usr|/var)",
-        '            die "Directorio protegido; no se limpia: ${resolved}" ;;',
+        '            die "Protected directory; not cleaning: ${resolved}" ;;',
         "    esac",
-        '    [[ "${resolved}" != "${home}" ]] || die "No se limpia la carpeta personal completa"',
+        '    [[ "${resolved}" != "${home}" ]] || die "Refusing to clean the whole home folder"',
         "    printf '%s\\n' \"${resolved}\"",
         "}",
     ])
     main = ['parse_args "$@"', "", "local dir"]
-    main += ctx.explain("|| exit garantiza que un error en la subshell detiene el script también sin modo estricto.")
+    main += ctx.explain("|| exit makes an error in the subshell stop the script even without strict mode.")
     main += [
         'dir="$(resolve_target)" || exit 1',
         "",
@@ -361,69 +361,69 @@ def _build_cleanup(ctx: BuildContext) -> TemplateBody:
         f'mapfile -d \'\' -t files < <(find "${{dir}}"{depth} -type f -name "${{NAME_PATTERN}}" -mmin +"$((MIN_AGE_DAYS * 1440))" -print0)',
         "",
         "if [[ ${#files[@]} -eq 0 ]]; then",
-        '    ok "No hay archivos que limpiar en ${dir}"',
+        '    ok "Nothing to clean in ${dir}"',
         "    return 0",
         "fi",
         "",
-        'info "Archivos encontrados (${#files[@]}):"',
+        'info "Files found (${#files[@]}):"',
         "printf '  %s\\n' \"${files[@]}\" >&2",
         "",
         'if [[ "${APPLY}" != true ]]; then',
-        '    warn "Simulación: no se ha borrado nada. Ejecuta con --apply para borrar."',
+        '    warn "Dry run: nothing was deleted. Run with --apply to delete."',
         "    return 0",
         "fi",
         "",
         'if [[ "${ASSUME_YES}" != true ]]; then',
         '    local answer=""',
-        '    read -r -p "¿Borrar ${#files[@]} archivo(s) de forma permanente? [s/N] " answer || answer=""',
-        '    if [[ ! "${answer}" =~ ^[sS]$ ]]; then',
-        '        info "Operación cancelada"',
+        '    read -r -p "Permanently delete ${#files[@]} file(s)? [y/N] " answer || answer=""',
+        '    if [[ ! "${answer}" =~ ^[yY]$ ]]; then',
+        '        info "Cancelled"',
         "        return 0",
         "    fi",
         "fi",
         "",
         'rm -f -- "${files[@]}"',
-        'ok "Borrados ${#files[@]} archivo(s)"',
+        'ok "Deleted ${#files[@]} file(s)"',
     ]
     return TemplateBody(globals=globals_, functions=[usage, parse, check], main=main, uses_logging=True)
 
 
 def _check_pattern(value: str) -> str | None:
     if "/" in value:
-        return "El patrón no puede contener /"
+        return "The pattern cannot contain /"
     if value.strip("*?") == "":
-        return "El patrón es demasiado amplio; incluye parte del nombre, p. ej. *.tmp"
+        return "The pattern is too broad; include part of the name, e.g. *.tmp"
     return None
 
 
 CLEANUP = Template(
     id="cleanup-temp",
-    name="Limpieza de temporales",
-    description="Lista y, solo con --apply y confirmación, borra archivos antiguos que coinciden con un patrón.",
-    category="Archivos",
-    script_description="Borra archivos temporales antiguos de un directorio, con simulación previa.",
+    name="Temporary files cleanup",
+    description="Lists old files matching a pattern and deletes them only with --apply and confirmation.",
+    category="Files",
+    script_description="Deletes old temporary files from a directory, with a dry run first.",
     usage="[--apply] [--yes]",
     params=(
-        TemplateParam("target_dir", "Directorio a limpiar", ParamType.PATH, "~/.cache/mi-aplicacion/tmp",
-                      "No se admiten carpetas del sistema ni la carpeta personal completa.",
+        TemplateParam("target_dir", "Directory to clean", ParamType.PATH, "~/.cache/my-app/tmp",
+                      "System folders and the whole home folder are not allowed.",
                       check=_check_modifiable_path),
-        TemplateParam("pattern", "Patrón de nombre", ParamType.TEXT, "*.tmp", "Patrón de find -name.",
+        TemplateParam("pattern", "Name pattern", ParamType.TEXT, "*.tmp", "find -name pattern.",
                       check=_check_pattern),
-        TemplateParam("min_age_days", "Antigüedad mínima (días)", ParamType.INT, 7, minimum=0, maximum=3650),
-        TemplateParam("recursive", "Incluir subdirectorios", ParamType.BOOL, False),
+        TemplateParam("min_age_days", "Minimum age (days)", ParamType.INT, 7, minimum=0, maximum=3650),
+        TemplateParam("recursive", "Include subdirectories", ParamType.BOOL, False),
     ),
     risk=Risk(RiskLevel.HIGH, (
-        "Con --apply borra archivos de forma permanente (no van a la papelera).",
-        "Por defecto el script solo muestra lo que borraría.",
-        "Pide confirmación salvo que se use --yes.",
-        "Rechaza carpetas del sistema y la carpeta personal completa.",
+        "With --apply it permanently deletes files (they do not go to the trash).",
+        "By default the script only shows what it would delete.",
+        "It asks for confirmation unless --yes is used.",
+        "It refuses system folders and the whole home folder.",
     )),
     build=_build_cleanup,
-    tags=("rm", "find", "temporales", "limpiar"),
+    tags=("rm", "find", "temporary", "clean"),
 )
 
 # ---------------------------------------------------------------------------
-# 5. Monitorización de procesos
+# 5. Process monitoring
 # ---------------------------------------------------------------------------
 
 def _build_monitor(ctx: BuildContext) -> TemplateBody:
@@ -431,27 +431,27 @@ def _build_monitor(ctx: BuildContext) -> TemplateBody:
         f"readonly PROCESS_NAME={single_quote(ctx.values['process_name'])}",
         f"readonly INTERVAL_SECONDS={ctx.values['interval']}",
     ]
-    globals_ += ctx.explain("0 = comprobar indefinidamente (detén el script con Ctrl+C).")
+    globals_ += ctx.explain("0 = check forever (stop the script with Ctrl+C).")
     globals_.append(f"readonly MAX_CHECKS={ctx.values['max_checks']}")
 
     check = ["check_once() {", "    local pids"]
     check += ["    " + line for line in ctx.explain(
-        "pgrep devuelve 1 cuando no hay coincidencias: se evalúa en un if para",
-        "que no se trate como un error del script.")]
+        "pgrep returns 1 when nothing matches: it is evaluated inside an if so",
+        "that it is not treated as a script error.")]
     check += [
         '    if pids="$(pgrep -x -- "${PROCESS_NAME}")"; then',
-        '        ok "${PROCESS_NAME} en ejecución (PID: ${pids//$\'\\n\'/, })"',
+        '        ok "${PROCESS_NAME} is running (PID: ${pids//$\'\\n\'/, })"',
         '        ps -o pid=,pcpu=,pmem=,etime= -p "${pids//$\'\\n\'/,}" | while read -r pid cpu mem elapsed; do',
-        '            info "  PID ${pid}: CPU ${cpu}% · memoria ${mem}% · activo ${elapsed}"',
+        '            info "  PID ${pid}: CPU ${cpu}% · memory ${mem}% · uptime ${elapsed}"',
         "        done",
         "        return 0",
         "    fi",
-        '    warn "${PROCESS_NAME} no está en ejecución"',
+        '    warn "${PROCESS_NAME} is not running"',
         "    return 1",
         "}",
     ]
     main = [
-        'command -v pgrep >/dev/null 2>&1 || die "No se encontró pgrep (paquete procps)"',
+        'command -v pgrep >/dev/null 2>&1 || die "pgrep was not found (procps package)"',
         "",
         "local count=0 missing=0",
         "while true; do",
@@ -463,46 +463,46 @@ def _build_monitor(ctx: BuildContext) -> TemplateBody:
         '    sleep "${INTERVAL_SECONDS}"',
         "done",
         "",
-        'info "Comprobaciones: ${count}; sin el proceso: ${missing}"',
+        'info "Checks: ${count}; process missing: ${missing}"',
     ]
-    main += ctx.explain("El código de salida es 1 si el proceso faltó en alguna comprobación.")
+    main += ctx.explain("The exit code is 1 if the process was missing in any check.")
     main.append('[[ "${missing}" -eq 0 ]]')
     return TemplateBody(globals=globals_, functions=["\n".join(check)], main=main, uses_logging=True)
 
 
 MONITOR = Template(
     id="process-monitor",
-    name="Monitorización de procesos",
-    description="Comprueba periódicamente si un proceso está activo y muestra su uso de CPU y memoria.",
-    category="Sistema",
-    script_description="Vigila si un proceso está en ejecución y muestra su consumo.",
+    name="Process monitor",
+    description="Periodically checks whether a process is running and shows its CPU and memory usage.",
+    category="System",
+    script_description="Watches whether a process is running and shows its resource usage.",
     params=(
-        TemplateParam("process_name", "Nombre del proceso", ParamType.TEXT, "nginx",
-                      "Nombre exacto (pgrep -x), máximo 15 caracteres.",
-                      check=_regex_check(r"[A-Za-z0-9._+:-]{1,15}", "Nombre de proceso no válido")),
-        TemplateParam("interval", "Intervalo (segundos)", ParamType.INT, 5, minimum=1, maximum=86400),
-        TemplateParam("max_checks", "Número de comprobaciones", ParamType.INT, 1,
-                      "0 = sin límite.", minimum=0, maximum=1_000_000),
+        TemplateParam("process_name", "Process name", ParamType.TEXT, "nginx",
+                      "Exact name (pgrep -x), up to 15 characters.",
+                      check=_regex_check(r"[A-Za-z0-9._+:-]{1,15}", "Invalid process name")),
+        TemplateParam("interval", "Interval (seconds)", ParamType.INT, 5, minimum=1, maximum=86400),
+        TemplateParam("max_checks", "Number of checks", ParamType.INT, 1,
+                      "0 = no limit.", minimum=0, maximum=1_000_000),
     ),
-    risk=Risk(RiskLevel.LOW, ("Solo lee información de procesos; no los modifica.",)),
+    risk=Risk(RiskLevel.LOW, ("Only reads process information; it does not change processes.",)),
     build=_build_monitor,
-    tags=("pgrep", "ps", "procesos", "monitor"),
+    tags=("pgrep", "ps", "processes", "monitor"),
 )
 
 # ---------------------------------------------------------------------------
-# 6. Organización de archivos
+# 6. File organizer
 # ---------------------------------------------------------------------------
 
 def _build_organizer(ctx: BuildContext) -> TemplateBody:
-    others = "Otros" if ctx.values["include_others"] else ""
+    others = "Other" if ctx.values["include_others"] else ""
     globals_ = [f"readonly SOURCE_DIR={path_literal(ctx.values['source_dir'])}", "", "APPLY=false"]
     usage = "\n".join([
         "usage() {",
         "    cat <<EOF",
-        "Uso: ${0##*/} [--apply]",
+        "Usage: ${0##*/} [--apply]",
         "",
-        "Clasifica por extensión los archivos de ${SOURCE_DIR} en subcarpetas.",
-        "Sin --apply solo muestra lo que haría (simulación).",
+        "Sorts the files in ${SOURCE_DIR} into subfolders by extension.",
+        "Without --apply it only shows what it would do (dry run).",
         "EOF",
         "}",
     ])
@@ -510,24 +510,24 @@ def _build_organizer(ctx: BuildContext) -> TemplateBody:
     category = "\n".join([
         "category_for() {",
         '    case "${1,,}" in',
-        "        jpg|jpeg|png|gif|webp|svg|bmp|heic) printf 'Imagenes' ;;",
-        "        pdf|doc|docx|odt|txt|md|rtf|xls|xlsx|ods|ppt|pptx|odp|csv) printf 'Documentos' ;;",
+        "        jpg|jpeg|png|gif|webp|svg|bmp|heic) printf 'Images' ;;",
+        "        pdf|doc|docx|odt|txt|md|rtf|xls|xlsx|ods|ppt|pptx|odp|csv) printf 'Documents' ;;",
         "        mp3|flac|ogg|wav|m4a|opus) printf 'Audio' ;;",
         "        mp4|mkv|webm|avi|mov) printf 'Video' ;;",
-        "        zip|tar|gz|xz|bz2|zst|7z|rar) printf 'Comprimidos' ;;",
+        "        zip|tar|gz|xz|bz2|zst|7z|rar) printf 'Archives' ;;",
         f"        *) printf '%s' {single_quote(others)} ;;",
         "    esac",
         "}",
     ])
     main = [
         'parse_args "$@"',
-        '[[ -d "${SOURCE_DIR}" ]] || die "No existe el directorio: ${SOURCE_DIR}"',
+        '[[ -d "${SOURCE_DIR}" ]] || die "Directory does not exist: ${SOURCE_DIR}"',
         "",
         "local file name category moved=0 skipped=0",
         "shopt -s nullglob",
         'for file in "${SOURCE_DIR}"/*; do',
     ]
-    main += ["    " + line for line in ctx.explain("Se ignoran carpetas, enlaces, ocultos y archivos sin extensión.")]
+    main += ["    " + line for line in ctx.explain("Folders, links, hidden files and files without an extension are skipped.")]
     main += [
         '    [[ -f "${file}" && ! -L "${file}" ]] || continue',
         '    name="${file##*/}"',
@@ -541,26 +541,26 @@ def _build_organizer(ctx: BuildContext) -> TemplateBody:
         "        continue",
         "    fi",
         '    if [[ -e "${SOURCE_DIR}/${category}/${name}" ]]; then',
-        '        warn "Ya existe ${category}/${name}; se omite"',
+        '        warn "${category}/${name} already exists; skipping"',
         "        skipped=$((skipped + 1))",
         "        continue",
         "    fi",
         '    if [[ "${APPLY}" == true ]]; then',
         '        mkdir -p -- "${SOURCE_DIR}/${category}"',
     ]
-    main += ["        " + line for line in ctx.explain("mv -n nunca sobrescribe un archivo existente.")]
+    main += ["        " + line for line in ctx.explain("mv -n never overwrites an existing file.")]
     main += [
         '        mv -n -- "${file}" "${SOURCE_DIR}/${category}/"',
         '        info "${name} → ${category}/"',
         "    else",
-        '        info "[simulación] ${name} → ${category}/"',
+        '        info "[dry run] ${name} → ${category}/"',
         "    fi",
         "    moved=$((moved + 1))",
         "done",
         "",
-        'ok "Archivos clasificados: ${moved}; omitidos: ${skipped}"',
+        'ok "Files sorted: ${moved}; skipped: ${skipped}"',
         'if [[ "${APPLY}" != true ]]; then',
-        '    warn "Simulación: no se ha movido nada. Ejecuta con --apply para aplicar."',
+        '    warn "Dry run: nothing was moved. Run with --apply to apply."',
         "fi",
     ]
     return TemplateBody(globals=globals_, functions=[usage, parse, category], main=main, uses_logging=True)
@@ -568,81 +568,81 @@ def _build_organizer(ctx: BuildContext) -> TemplateBody:
 
 ORGANIZER = Template(
     id="file-organizer",
-    name="Organizador de archivos",
-    description="Clasifica los archivos de una carpeta en subcarpetas según su extensión.",
-    category="Archivos",
-    script_description="Ordena los archivos de una carpeta en subcarpetas por tipo.",
+    name="File organizer",
+    description="Sorts the files in a folder into subfolders by extension.",
+    category="Files",
+    script_description="Sorts the files in a folder into subfolders by type.",
     usage="[--apply]",
     params=(
-        TemplateParam("source_dir", "Carpeta a organizar", ParamType.PATH, "~/Descargas",
+        TemplateParam("source_dir", "Folder to organize", ParamType.PATH, "~/Downloads",
                       check=_check_modifiable_path),
-        TemplateParam("include_others", "Mover extensiones desconocidas a «Otros»", ParamType.BOOL, False),
+        TemplateParam("include_others", "Move unknown extensions to 'Other'", ParamType.BOOL, False),
     ),
     risk=Risk(RiskLevel.MEDIUM, (
-        "Con --apply mueve archivos a subcarpetas; nunca sobrescribe (mv -n).",
-        "Por defecto el script solo muestra lo que haría.",
-        "Otros programas pueden dejar de encontrar los archivos movidos.",
+        "With --apply it moves files into subfolders; it never overwrites (mv -n).",
+        "By default the script only shows what it would do.",
+        "Other programs may no longer find the moved files.",
     )),
     build=_build_organizer,
-    tags=("mv", "ordenar", "descargas", "extensiones"),
+    tags=("mv", "sort", "downloads", "extensions"),
 )
 
 # ---------------------------------------------------------------------------
-# 7. Comprobación del estado de servicios
+# 7. Service status check
 # ---------------------------------------------------------------------------
 
 def _build_services(ctx: BuildContext) -> TemplateBody:
     scope = "--user" if ctx.values["user_scope"] else "--system"
     globals_ = [f"readonly SERVICES={array_literal(ctx.values['services'])}", f"readonly SCOPE={scope}"]
     main = [
-        'command -v systemctl >/dev/null 2>&1 || die "systemctl no está disponible (¿el sistema usa systemd?)"',
+        'command -v systemctl >/dev/null 2>&1 || die "systemctl is not available (does this system use systemd?)"',
         "",
         "local service state failed=0",
         'for service in "${SERVICES[@]}"; do',
     ]
     main += ["    " + line for line in ctx.explain(
-        "is-active devuelve un código distinto de 0 si el servicio no está activo;",
-        "se guarda el estado con || true para evaluarlo después.")]
+        "is-active returns a non-zero code when the service is not active;",
+        "the state is captured with || true and evaluated afterwards.")]
     main += [
         '    state="$(systemctl "${SCOPE}" is-active -- "${service}" 2>/dev/null)" || true',
         '    if [[ "${state}" == active ]]; then',
-        '        ok "${service}: activo"',
+        '        ok "${service}: active"',
         "    else",
-        '        warn "${service}: ${state:-desconocido}"',
+        '        warn "${service}: ${state:-unknown}"',
         "        failed=$((failed + 1))",
         "    fi",
         "done",
         "",
         'if [[ "${failed}" -gt 0 ]]; then',
-        '    warn "${failed} servicio(s) no están activos"',
+        '    warn "${failed} service(s) are not active"',
         "    return 1",
         "fi",
-        'ok "Todos los servicios están activos"',
+        'ok "All services are active"',
     ]
     return TemplateBody(globals=globals_, main=main, uses_logging=True)
 
 
 SERVICES = Template(
     id="service-check",
-    name="Estado de servicios",
-    description="Comprueba con systemctl si una lista de servicios está activa; sale con 1 si alguno falla.",
-    category="Sistema",
-    script_description="Comprueba si los servicios indicados están activos.",
+    name="Service status",
+    description="Uses systemctl to check whether a list of services is active; exits with 1 if any is not.",
+    category="System",
+    script_description="Checks whether the given services are active.",
     params=(
-        TemplateParam("services", "Servicios", ParamType.LIST, ["ssh", "cron"],
-                      "Nombres de unidad separados por comas.",
-                      check=_regex_check(r"[A-Za-z0-9@._:-]+", "Nombre de servicio no válido")),
-        TemplateParam("user_scope", "Servicios de usuario (--user)", ParamType.BOOL, False),
+        TemplateParam("services", "Services", ParamType.LIST, ["ssh", "cron"],
+                      "Comma-separated unit names.",
+                      check=_regex_check(r"[A-Za-z0-9@._:-]+", "Invalid service name")),
+        TemplateParam("user_scope", "User services (--user)", ParamType.BOOL, False),
     ),
-    risk=Risk(RiskLevel.LOW, ("Solo consulta el estado; no inicia ni detiene servicios.",)),
+    risk=Risk(RiskLevel.LOW, ("Only queries the state; it never starts or stops services.",)),
     build=_build_services,
-    tags=("systemctl", "systemd", "servicios"),
+    tags=("systemctl", "systemd", "services"),
 )
 
 BUILTIN_TEMPLATES: tuple[Template, ...] = (MINIMAL, CLI_TOOL, BACKUP, CLEANUP, MONITOR, ORGANIZER, SERVICES)
 
 # ---------------------------------------------------------------------------
-# Registro con plantillas personalizadas
+# Registry including custom templates
 # ---------------------------------------------------------------------------
 
 _CUSTOM_ID_RE = re.compile(r"^custom-[a-z0-9-]+$")
@@ -653,11 +653,11 @@ def slugify(text: str) -> str:
 
     ascii_text = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode()
     slug = re.sub(r"[^a-z0-9]+", "-", ascii_text.lower()).strip("-")
-    return slug or "plantilla"
+    return slug or "template"
 
 
 class TemplateRegistry:
-    """Plantillas integradas más las personalizadas guardadas como JSON."""
+    """Built-in templates plus custom ones stored as JSON."""
 
     def __init__(self, custom_dir: Path | None = None) -> None:
         self.custom_dir = custom_dir
@@ -696,7 +696,7 @@ class TemplateRegistry:
             result.append(template)
         return result
 
-    # -- personalizadas ----------------------------------------------------
+    # -- custom templates ----------------------------------------------------
 
     def _load_custom(self) -> None:
         assert self.custom_dir is not None
@@ -712,7 +712,7 @@ class TemplateRegistry:
             try:
                 template = self._from_dict(data)
             except (KeyError, TypeError, ValueError) as exc:
-                self.warnings.append(f"Plantilla {path.name} ignorada: {exc}")
+                self.warnings.append(f"Template {path.name} ignored: {exc}")
                 continue
             self._custom[template.id] = template
 
@@ -720,28 +720,28 @@ class TemplateRegistry:
     def _from_dict(data: dict[str, Any]) -> Template:
         template_id = str(data["id"])
         if not _CUSTOM_ID_RE.match(template_id):
-            raise ValueError("identificador no válido")
+            raise ValueError("invalid identifier")
         body = data["body"]
         if not isinstance(body, str) or not body.strip():
-            raise ValueError("el código está vacío")
+            raise ValueError("the code is empty")
         return Template(
             id=template_id,
             name=str(data["name"]),
             description=str(data.get("description", "")),
             category=CUSTOM_CATEGORY,
-            script_description=str(data.get("description", "")) or "Script creado a partir de una plantilla propia.",
+            script_description=str(data.get("description", "")) or "Script created from a custom template.",
             custom_body=body,
-            tags=("personalizada",),
+            tags=("custom",),
         )
 
     def save_custom(self, name: str, description: str, body: str) -> Template:
         if self.custom_dir is None:
-            raise RuntimeError("No hay carpeta para plantillas personalizadas")
+            raise RuntimeError("There is no folder for custom templates")
         name = " ".join(name.split())
         if not name:
-            raise ValueError("La plantilla necesita un nombre")
+            raise ValueError("The template needs a name")
         if not body.strip():
-            raise ValueError("El código de la plantilla está vacío")
+            raise ValueError("The template code is empty")
         base = f"custom-{slugify(name)}"
         template_id, counter = base, 2
         while self.get(template_id) is not None:

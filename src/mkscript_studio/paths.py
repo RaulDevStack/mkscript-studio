@@ -1,4 +1,4 @@
-"""Rutas de usuario (XDG) y utilidades de expansión de rutas."""
+"""User directories (XDG) and path expansion helpers."""
 
 from __future__ import annotations
 
@@ -9,20 +9,20 @@ APP_DIR_NAME = "mkscript-studio"
 
 
 def expand_user_path(value: str | os.PathLike[str]) -> Path:
-    """Expande ``~`` y variables de entorno (``$HOME``) y normaliza la ruta.
+    """Expand ``~`` and environment variables (``$HOME``) and normalize the path.
 
-    No resuelve enlaces simbólicos ni exige que la ruta exista.
+    Does not resolve symlinks or require the path to exist.
     """
     text = os.fspath(value).strip()
     if not text:
-        raise ValueError("La ruta está vacía")
+        raise ValueError("The path is empty")
     expanded = os.path.expanduser(os.path.expandvars(text))
     return Path(os.path.normpath(expanded))
 
 
 def _xdg_dir(env_name: str, fallback: str) -> Path:
     raw = os.environ.get(env_name, "").strip()
-    # La especificación XDG exige rutas absolutas; las relativas se ignoran.
+    # The XDG spec requires absolute paths; relative ones are ignored.
     if raw and os.path.isabs(raw):
         return Path(raw)
     return Path.home() / fallback

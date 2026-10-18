@@ -1,4 +1,4 @@
-"""Inicio: crear scripts, recientes, favoritas, accesos rápidos y preferencias actuales."""
+"""Home: create scripts, recent files, favorites, shortcuts and current preferences."""
 
 from __future__ import annotations
 
@@ -19,14 +19,14 @@ if TYPE_CHECKING:
     from mkscript_studio.window import MainWindow
 
 SHORTCUTS = [
-    ("Ctrl+N", "Nuevo script"),
-    ("Ctrl+O", "Abrir archivo"),
-    ("Ctrl+S", "Guardar"),
-    ("Ctrl+F / Ctrl+H", "Buscar / reemplazar"),
-    ("Tab", "Autocompletar (ec → echo)"),
-    ("Ctrl+Espacio", "Mostrar sugerencias"),
-    ("F7", "Comprobar sintaxis"),
-    ("F5", "Ejecutar (con confirmación)"),
+    ("Ctrl+N", "New script"),
+    ("Ctrl+O", "Open file"),
+    ("Ctrl+S", "Save"),
+    ("Ctrl+F / Ctrl+H", "Find / replace"),
+    ("Tab", "Autocomplete (ec → echo)"),
+    ("Ctrl+Space", "Show suggestions"),
+    ("F7", "Check syntax"),
+    ("F5", "Run (with confirmation)"),
 ]
 
 
@@ -66,14 +66,14 @@ class HomeView(Gtk.ScrolledWindow):
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
         box.add_css_class("mks-hero")
         box.append(label(APP_NAME, css=("title-1",)))
-        box.append(label("Crea, personaliza, valida y guarda scripts Bash. Empieza con una plantilla "
-                         "o escribe directamente en el editor.", css=("dim-label",), wrap=True))
+        box.append(label("Create, customize, validate and save Bash scripts. Start from a template "
+                         "or write straight in the editor.", css=("dim-label",), wrap=True))
         buttons = Gtk.Box(spacing=8, margin_top=8)
-        buttons.append(text_button("Nuevo script", self._new_script, icon="document-new-symbolic",
+        buttons.append(text_button("New script", self._new_script, icon="document-new-symbolic",
                                    css=("pill", "suggested-action")))
-        buttons.append(text_button("Desde plantilla", lambda: self.window.show_section("library"),
+        buttons.append(text_button("From template", lambda: self.window.show_section("library"),
                                    icon="view-grid-symbolic", css=("pill",)))
-        buttons.append(text_button("Abrir archivo…", self.window.studio.open_dialog,
+        buttons.append(text_button("Open file…", self.window.studio.open_dialog,
                                    icon="document-open-symbolic", css=("pill",)))
         box.append(buttons)
         return box
@@ -88,11 +88,11 @@ class HomeView(Gtk.ScrolledWindow):
         return group
 
     def _recent_group(self) -> Gtk.Widget:
-        group = self._group("Recientes")
+        group = self._group("Recent")
         recent = self.services.state.existing_recent_files()[:6]
         if not recent:
-            group.add(Adw.ActionRow(title="Todavía no hay archivos recientes",
-                                    subtitle="Los scripts que abras o guardes aparecerán aquí."))
+            group.add(Adw.ActionRow(title="No recent files yet",
+                                    subtitle="Scripts you open or save will show up here."))
         for path in recent:
             row = Adw.ActionRow(title=path.name, subtitle=tilde_path(path.parent), activatable=True)
             row.set_use_markup(False)
@@ -103,11 +103,11 @@ class HomeView(Gtk.ScrolledWindow):
         return group
 
     def _favorites_group(self) -> Gtk.Widget:
-        group = self._group("Plantillas favoritas")
+        group = self._group("Favorite templates")
         favorites = [t for t in (self.services.templates.get(i) for i in self.services.state.favorite_templates) if t]
         if not favorites:
-            group.add(Adw.ActionRow(title="Sin favoritas",
-                                    subtitle="Marca plantillas con la estrella en la Biblioteca."))
+            group.add(Adw.ActionRow(title="No favorites",
+                                    subtitle="Star templates in the Library."))
         for template in favorites[:6]:
             row = Adw.ActionRow(title=template.name, subtitle=template.category, activatable=True)
             row.set_use_markup(False)
@@ -122,7 +122,7 @@ class HomeView(Gtk.ScrolledWindow):
         self.window.library.select_template(template_id)
 
     def _shortcuts_group(self) -> Gtk.Widget:
-        group = self._group("Accesos rápidos")
+        group = self._group("Shortcuts")
         for keys, action in SHORTCUTS:
             row = Adw.ActionRow(title=action)
             shortcut = label(keys, css=("mks-kbd",))
@@ -133,19 +133,19 @@ class HomeView(Gtk.ScrolledWindow):
 
     def _preferences_group(self) -> Gtk.Widget:
         prefs = self.services.prefs.preferences
-        group = self._group("Preferencias actuales")
-        button = Gtk.Button(label="Cambiar", valign=Gtk.Align.CENTER)
+        group = self._group("Current preferences")
+        button = Gtk.Button(label="Change", valign=Gtk.Align.CENTER)
         button.add_css_class("flat")
         button.connect("clicked", lambda *_: self.window.show_section("preferences"))
         group.set_header_suffix(button)
         rows = [
             ("Shell", SUPPORTED_SHELLS.get(prefs.shell, prefs.shell)),
-            ("Comentarios", COMMENT_STYLES.get(prefs.comment_style, prefs.comment_style)),
-            ("Modo estricto", "Activado (set -Eeuo pipefail)" if prefs.strict_mode else "Desactivado"),
-            ("Carpeta de salida", prefs.output_directory),
-            ("Copia antes de sobrescribir", "Sí" if prefs.backup_before_overwrite else "No"),
-            ("Permisos de ejecución", "Sí" if prefs.executable_permissions else "No"),
-            ("Tema", THEMES.get(prefs.theme, prefs.theme)),
+            ("Comments", COMMENT_STYLES.get(prefs.comment_style, prefs.comment_style)),
+            ("Strict mode", "On (set -Eeuo pipefail)" if prefs.strict_mode else "Off"),
+            ("Output folder", prefs.output_directory),
+            ("Backup before overwriting", "Yes" if prefs.backup_before_overwrite else "No"),
+            ("Executable permission", "Yes" if prefs.executable_permissions else "No"),
+            ("Theme", THEMES.get(prefs.theme, prefs.theme)),
         ]
         for title, value in rows:
             row = Adw.ActionRow(title=title, subtitle=value)

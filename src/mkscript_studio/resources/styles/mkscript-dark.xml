@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Esquema de colores de MKSCRIPT Studio para GtkSourceView 5 (oscuro). -->
-<style-scheme id="mkscript-dark" name="MKSCRIPT Grafito" version="1.0">
+<!-- MKSCRIPT Studio color scheme for GtkSourceView 5 (dark). -->
+<style-scheme id="mkscript-dark" name="MKSCRIPT Graphite" version="1.0">
   <author>MKSCRIPT Studio</author>
-  <description>Grafito con acentos turquesa</description>
+  <description>Graphite with teal accents</description>
 
   <color name="bg" value="#1a1d22"/>
   <color name="bg-line" value="#20242a"/>

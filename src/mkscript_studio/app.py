@@ -1,4 +1,4 @@
-"""Punto de entrada de la aplicación GTK."""
+"""GTK application entry point."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ try:
     gi.require_version("Adw", "1")
     gi.require_version("GtkSource", "5")
     from gi.repository import Adw, Gdk, Gio, Gtk, GtkSource
-except (ImportError, ValueError) as exc:  # dependencias del sistema ausentes
+except (ImportError, ValueError) as exc:  # missing system dependencies
     _IMPORT_ERROR: Exception | None = exc
 else:
     _IMPORT_ERROR = None
@@ -21,10 +21,10 @@ from mkscript_studio import APP_ID, APP_NAME, __version__
 from mkscript_studio.paths import resources_dir
 
 _MISSING_DEPS = """\
-MKSCRIPT Studio necesita PyGObject, GTK 4, libadwaita (>= 1.4) y GtkSourceView 5.
+MKSCRIPT Studio needs PyGObject, GTK 4, libadwaita (>= 1.4) and GtkSourceView 5.
 Error: {error}
 
-Instalación en Debian/Ubuntu:
+Install on Debian/Ubuntu/Kali:
   sudo apt install python3-gi gir1.2-gtk-4.0 gir1.2-adw-1 gir1.2-gtksource-5
 Fedora:
   sudo dnf install python3-gobject gtk4 libadwaita gtksourceview5
@@ -96,7 +96,7 @@ if _IMPORT_ERROR is None:
             styles = resources_dir() / "styles"
             Gtk.IconTheme.get_for_display(display).add_search_path(str(resources_dir() / "icons"))
 
-            # libadwaita >= 1.6 usa variables CSS; las versiones anteriores, colores con nombre.
+            # libadwaita >= 1.6 uses CSS variables; older versions use named colors.
             modern = Adw.get_minor_version() >= 6
             base = Gtk.CssProvider()
             base.load_from_path(str(styles / ("accent-vars.css" if modern else "accent-named.css")))
@@ -148,7 +148,7 @@ if _IMPORT_ERROR is None:
         def quit_safely(self) -> None:
             window = self.props.active_window
             if window is not None:
-                window.close()  # pasa por la confirmación de cambios sin guardar
+                window.close()  # goes through the unsaved-changes confirmation
             else:
                 self.quit()
 
@@ -160,9 +160,9 @@ if _IMPORT_ERROR is None:
                 version=__version__,
                 developer_name="RaulDevStack",
                 license_type=Gtk.License.MIT_X11,
-                website="https://github.com/RaulDevStack/mkscript",
-                comments="Taller visual para crear, editar, validar y guardar scripts Bash.\n"
-                         "Evolución de mkscript.",
+                website="https://github.com/RaulDevStack/mkscript-studio",
+                comments="A visual workshop to create, edit, validate and save Bash scripts.\n"
+                         "The evolution of mkscript.",
             )
             about.present()
 

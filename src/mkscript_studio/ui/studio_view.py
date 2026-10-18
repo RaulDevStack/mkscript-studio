@@ -1,4 +1,4 @@
-"""Studio: editor, panel de archivos, panel de generación y panel inferior."""
+"""Studio: editor, files panel, generation panel and bottom panel."""
 
 from __future__ import annotations
 
@@ -49,7 +49,7 @@ if TYPE_CHECKING:
     from mkscript_studio.context import AppServices
     from mkscript_studio.window import MainWindow
 
-UNTITLED = "sin_titulo.sh"
+UNTITLED = "untitled.sh"
 _SEVERITY_ICON = {
     "error": "dialog-error-symbolic",
     "warning": "dialog-warning-symbolic",
@@ -65,11 +65,11 @@ class Document:
     description: str = ""
     template_id: str | None = None
     values: dict[str, Any] = field(default_factory=dict)
-    #: Fecha de modificación al abrir/guardar, para detectar cambios externos.
+    #: Modification time at open/save, to detect external changes.
     mtime: float | None = None
-    #: Ya se hizo la copia de seguridad del archivo original en esta sesión.
+    #: The original file has already been backed up in this session.
     backup_done: bool = False
-    #: Carpeta sugerida al guardar por primera vez (p. ej. la de un proyecto).
+    #: Suggested folder for the first save (e.g. a project folder).
     save_dir: Path | None = None
 
     @property
@@ -113,7 +113,7 @@ class StudioView(Gtk.Box):
         self._set_document(Document(), self._starter_code())
 
     # ------------------------------------------------------------------
-    # Construcción
+    # Construction
     # ------------------------------------------------------------------
 
     def _build_toolbar(self) -> Gtk.Widget:
@@ -121,46 +121,46 @@ class StudioView(Gtk.Box):
         bar.add_css_class("mks-toolbar")
 
         files = Gtk.Box(css_classes=["linked"])
-        files.append(icon_button("document-new-symbolic", "Nuevo (Ctrl+N)", self.new_document, css=()))
-        files.append(icon_button("document-open-symbolic", "Abrir (Ctrl+O)", self.open_dialog, css=()))
-        files.append(icon_button("document-save-symbolic", "Guardar (Ctrl+S)", self.save, css=()))
-        files.append(icon_button("document-save-as-symbolic", "Guardar como (Ctrl+Mayús+S)", self.save_as, css=()))
+        files.append(icon_button("document-new-symbolic", "New (Ctrl+N)", self.new_document, css=()))
+        files.append(icon_button("document-open-symbolic", "Open (Ctrl+O)", self.open_dialog, css=()))
+        files.append(icon_button("document-save-symbolic", "Save (Ctrl+S)", self.save, css=()))
+        files.append(icon_button("document-save-as-symbolic", "Save as (Ctrl+Shift+S)", self.save_as, css=()))
         bar.append(files)
 
         edit = Gtk.Box(css_classes=["linked"])
-        edit.append(icon_button("edit-undo-symbolic", "Deshacer (Ctrl+Z)", self.editor.undo, css=()))
-        edit.append(icon_button("edit-redo-symbolic", "Rehacer (Ctrl+Mayús+Z)", self.editor.redo, css=()))
+        edit.append(icon_button("edit-undo-symbolic", "Undo (Ctrl+Z)", self.editor.undo, css=()))
+        edit.append(icon_button("edit-redo-symbolic", "Redo (Ctrl+Shift+Z)", self.editor.redo, css=()))
         bar.append(edit)
 
         search = Gtk.Box(css_classes=["linked"])
-        search.append(icon_button("edit-find-symbolic", "Buscar (Ctrl+F)", self.show_search, css=()))
-        search.append(icon_button("edit-find-replace-symbolic", "Reemplazar (Ctrl+H)",
+        search.append(icon_button("edit-find-symbolic", "Find (Ctrl+F)", self.show_search, css=()))
+        search.append(icon_button("edit-find-replace-symbolic", "Replace (Ctrl+H)",
                                   lambda: self.show_search(replace=True), css=()))
         bar.append(search)
 
         bar.append(Gtk.Separator(orientation=Gtk.Orientation.VERTICAL, margin_start=4, margin_end=4))
-        self.check_button = text_button("Comprobar sintaxis", self.check_syntax, icon="emblem-ok-symbolic",
-                                        tooltip="Analiza el código con bash -n sin ejecutarlo (F7)")
+        self.check_button = text_button("Check syntax", self.check_syntax, icon="emblem-ok-symbolic",
+                                        tooltip="Parse the code with bash -n without running it (F7)")
         bar.append(self.check_button)
         self.shellcheck_button = text_button("ShellCheck", self.run_shellcheck,
-                                             tooltip="Análisis estático adicional (Mayús+F7)")
+                                             tooltip="Additional static analysis (Shift+F7)")
         bar.append(self.shellcheck_button)
 
         spacer = Gtk.Box(hexpand=True)
         bar.append(spacer)
 
-        self.run_button = text_button("Ejecutar…", self.run_script, icon="media-playback-start-symbolic",
-                                      tooltip="Ejecuta el archivo guardado tras confirmar (F5)")
+        self.run_button = text_button("Run…", self.run_script, icon="media-playback-start-symbolic",
+                                      tooltip="Run the saved file after confirming (F5)")
         bar.append(self.run_button)
-        self.stop_button = icon_button("media-playback-stop-symbolic", "Detener la ejecución", self.stop_script,
+        self.stop_button = icon_button("media-playback-stop-symbolic", "Stop execution", self.stop_script,
                                        css=("destructive-action",))
         self.stop_button.set_visible(False)
         bar.append(self.stop_button)
 
         bar.append(Gtk.Separator(orientation=Gtk.Orientation.VERTICAL, margin_start=4, margin_end=4))
-        self.files_toggle = self._panel_toggle("sidebar-show-symbolic", "Panel de archivos")
-        self.bottom_toggle = self._panel_toggle("utilities-terminal-symbolic", "Panel de problemas y salida")
-        self.generation_toggle = self._panel_toggle("sidebar-show-right-symbolic", "Panel de generación")
+        self.files_toggle = self._panel_toggle("sidebar-show-symbolic", "Files panel")
+        self.bottom_toggle = self._panel_toggle("utilities-terminal-symbolic", "Problems and output panel")
+        self.generation_toggle = self._panel_toggle("sidebar-show-right-symbolic", "Generation panel")
         for toggle in (self.files_toggle, self.bottom_toggle, self.generation_toggle):
             bar.append(toggle)
         return bar
@@ -208,11 +208,11 @@ class StudioView(Gtk.Box):
         panel = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, width_request=200)
         panel.add_css_class("mks-side-panel")
         header = Gtk.Box(spacing=4, margin_start=12, margin_end=6, margin_top=8, margin_bottom=4)
-        self.files_title = label("Archivos", css=("heading",), ellipsize=True)
+        self.files_title = label("Files", css=("heading",), ellipsize=True)
         self.files_title.set_hexpand(True)
         header.append(self.files_title)
-        header.append(icon_button("view-refresh-symbolic", "Actualizar", self.refresh_files))
-        header.append(icon_button("folder-open-symbolic", "Abrir la carpeta en el gestor de archivos",
+        header.append(icon_button("view-refresh-symbolic", "Refresh", self.refresh_files))
+        header.append(icon_button("folder-open-symbolic", "Open the folder in the file manager",
                                   self._reveal_folder))
         panel.append(header)
         self.files_list = Gtk.ListBox(selection_mode=Gtk.SelectionMode.SINGLE)
@@ -229,7 +229,7 @@ class StudioView(Gtk.Box):
         self.bottom_stack = Gtk.Stack(vexpand=True, transition_type=Gtk.StackTransitionType.CROSSFADE)
 
         problems = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        self.problems_summary = label("Pulsa «Comprobar sintaxis» para analizar el código sin ejecutarlo.",
+        self.problems_summary = label("Press \"Check syntax\" to analyze the code without running it.",
                                       css=("dim-label",), wrap=True)
         self.problems_summary.set_margin_start(12)
         self.problems_summary.set_margin_end(12)
@@ -242,10 +242,10 @@ class StudioView(Gtk.Box):
         scroller = Gtk.ScrolledWindow(vexpand=True)
         scroller.set_child(self.problems_list)
         problems.append(scroller)
-        self.bottom_stack.add_titled(problems, "problems", "Problemas")
+        self.bottom_stack.add_titled(problems, "problems", "Problems")
 
         output = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        self.output_status = label("Sin ejecuciones en esta sesión.", css=("dim-label",), ellipsize=True)
+        self.output_status = label("No runs in this session.", css=("dim-label",), ellipsize=True)
         self.output_status.set_margin_start(12)
         self.output_status.set_margin_top(6)
         self.output_status.set_margin_bottom(6)
@@ -254,7 +254,7 @@ class StudioView(Gtk.Box):
                                         wrap_mode=Gtk.WrapMode.WORD_CHAR, left_margin=12, right_margin=12,
                                         top_margin=4, bottom_margin=12)
         self.output_view.add_css_class("mks-output")
-        self.output_view.update_property([Gtk.AccessibleProperty.LABEL], ["Salida de la ejecución"])
+        self.output_view.update_property([Gtk.AccessibleProperty.LABEL], ["Execution output"])
         self.output_buffer = self.output_view.get_buffer()
         self.output_buffer.create_tag("stderr", foreground="#f28b82")
         self.output_buffer.create_tag("meta", foreground="#7fd6c8", weight=Pango.Weight.BOLD)
@@ -262,14 +262,14 @@ class StudioView(Gtk.Box):
         output_scroller = Gtk.ScrolledWindow(vexpand=True)
         output_scroller.set_child(self.output_view)
         output.append(output_scroller)
-        self.bottom_stack.add_titled(output, "output", "Salida")
+        self.bottom_stack.add_titled(output, "output", "Output")
 
         header = Gtk.Box(spacing=6, margin_start=8, margin_end=8, margin_top=4, margin_bottom=4)
         switcher = Gtk.StackSwitcher(stack=self.bottom_stack)
         header.append(switcher)
         header.append(Gtk.Box(hexpand=True))
-        header.append(icon_button("edit-clear-all-symbolic", "Limpiar el panel", self._clear_bottom_panel))
-        header.append(icon_button("window-close-symbolic", "Cerrar el panel",
+        header.append(icon_button("edit-clear-all-symbolic", "Clear the panel", self._clear_bottom_panel))
+        header.append(icon_button("window-close-symbolic", "Close the panel",
                                   lambda: self.bottom_toggle.set_active(False)))
         panel.append(header)
         panel.append(Gtk.Separator())
@@ -279,25 +279,25 @@ class StudioView(Gtk.Box):
     def _build_generation_panel(self) -> Gtk.Widget:
         content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=14,
                           margin_start=14, margin_end=14, margin_top=14, margin_bottom=14)
-        content.append(label("Generación", css=("title-4",)))
-        content.append(label("Ajusta la plantilla y aplica el resultado al editor. "
-                             "Puedes deshacerlo con Ctrl+Z.", css=("dim-label", "caption"), wrap=True))
+        content.append(label("Generation", css=("title-4",)))
+        content.append(label("Adjust the template and apply the result to the editor. "
+                             "You can undo it with Ctrl+Z.", css=("dim-label", "caption"), wrap=True))
 
         templates = self.services.templates.all()
         self._panel_templates: list[Template] = templates
         self.template_dropdown = Gtk.DropDown.new_from_strings([t.name for t in templates])
-        self.template_dropdown.update_property([Gtk.AccessibleProperty.LABEL], ["Plantilla"])
+        self.template_dropdown.update_property([Gtk.AccessibleProperty.LABEL], ["Template"])
         self.template_dropdown.connect("notify::selected", self._on_panel_template_changed)
 
         group = Adw.PreferencesGroup()
-        template_row = Adw.ActionRow(title="Plantilla")
+        template_row = Adw.ActionRow(title="Template")
         template_row.add_suffix(self.template_dropdown)
         self.template_dropdown.set_valign(Gtk.Align.CENTER)
         group.add(template_row)
-        self.name_row = Adw.EntryRow(title="Nombre del script")
+        self.name_row = Adw.EntryRow(title="Script name")
         self.name_row.connect("changed", lambda *_: self._schedule_preview())
         group.add(self.name_row)
-        self.description_row = Adw.EntryRow(title="Descripción")
+        self.description_row = Adw.EntryRow(title="Description")
         self.description_row.connect("changed", lambda *_: self._schedule_preview())
         group.add(self.description_row)
         content.append(group)
@@ -310,11 +310,11 @@ class StudioView(Gtk.Box):
         self.panel_error.set_visible(False)
         content.append(self.panel_error)
 
-        self.apply_button = text_button("Aplicar al editor", self.regenerate, icon="document-edit-symbolic",
+        self.apply_button = text_button("Apply to editor", self.regenerate, icon="document-edit-symbolic",
                                         css=("suggested-action", "pill"))
         content.append(self.apply_button)
 
-        expander = Gtk.Expander(label="Vista previa", expanded=True)
+        expander = Gtk.Expander(label="Preview", expanded=True)
         self.panel_preview = CodeEditor(dark=Adw.StyleManager.get_default().get_dark(), read_only=True)
         self.panel_preview.set_size_request(-1, 320)
         self.panel_preview.add_css_class("mks-preview")
@@ -339,11 +339,11 @@ class StudioView(Gtk.Box):
         for widget in (self.status_path, self.status_state, self.status_position, self.status_indent, self.status_lang):
             widget.add_css_class("caption")
             bar.append(widget)
-        self.status_state.update_property([Gtk.AccessibleProperty.LABEL], ["Estado del archivo"])
+        self.status_state.update_property([Gtk.AccessibleProperty.LABEL], ["File status"])
         return bar
 
     # ------------------------------------------------------------------
-    # Estado del documento
+    # Document state
     # ------------------------------------------------------------------
 
     def _starter_code(self) -> str:
@@ -370,13 +370,13 @@ class StudioView(Gtk.Box):
     def _update_state(self) -> None:
         doc = self.document
         modified = self.editor.is_modified()
-        self.status_path.set_text(tilde_path(doc.path) if doc.path else "Sin guardar")
+        self.status_path.set_text(tilde_path(doc.path) if doc.path else "Not saved")
         if doc.path is None:
-            state = "Nuevo"
+            state = "New"
         elif modified:
-            state = "● Modificado"
+            state = "● Modified"
         else:
-            state = "Guardado"
+            state = "Saved"
         self.status_state.set_text(state)
         self.status_state.set_css_classes(["caption", "warning"] if modified else ["caption"])
         self.window.set_document_title(doc.title, modified)
@@ -393,11 +393,11 @@ class StudioView(Gtk.Box):
         prefs = self.services.prefs.preferences
         self.editor.apply_preferences(prefs)
         self.panel_preview.apply_preferences(prefs)
-        indent = f"Espacios: {prefs.editor_tab_width}" if prefs.editor_insert_spaces else f"Tabulación: {prefs.editor_tab_width}"
+        indent = f"Spaces: {prefs.editor_tab_width}" if prefs.editor_insert_spaces else f"Tab width: {prefs.editor_tab_width}"
         self.status_indent.set_text(indent)
         self.shellcheck_button.set_sensitive(self.services.validation.shellcheck_available)
         if not self.services.validation.shellcheck_available:
-            self.shellcheck_button.set_tooltip_text("ShellCheck no está instalado (es opcional)")
+            self.shellcheck_button.set_tooltip_text("ShellCheck is not installed (it is optional)")
         self._schedule_preview()
 
     def _on_dark_changed(self, manager: Adw.StyleManager, _pspec) -> None:
@@ -408,7 +408,7 @@ class StudioView(Gtk.Box):
         return self.editor.is_modified()
 
     def confirm_discard(self, proceed: Callable[[], None]) -> None:
-        """Ejecuta ``proceed`` tras guardar o descartar los cambios pendientes."""
+        """Run ``proceed`` after saving or discarding pending changes."""
         if not self.editor.is_modified():
             proceed()
             return
@@ -419,25 +419,25 @@ class StudioView(Gtk.Box):
             elif response == "discard":
                 proceed()
 
-        ask(self, "¿Guardar los cambios?",
-            f"«{self.document.title}» tiene cambios sin guardar. Si los descartas, se perderán.",
-            [("cancel", "Cancelar", ""), ("discard", "Descartar", "destructive"), ("save", "Guardar", "suggested")],
+        ask(self, "Save changes?",
+            f"\"{self.document.title}\" has unsaved changes. If you discard them, they will be lost.",
+            [("cancel", "Cancel", ""), ("discard", "Discard", "destructive"), ("save", "Save", "suggested")],
             on_response, default="save")
 
     # ------------------------------------------------------------------
-    # Archivos
+    # Files
     # ------------------------------------------------------------------
 
     def new_document(self, directory: Path | None = None) -> None:
         def proceed() -> None:
             self._set_document(Document(save_dir=directory), self._starter_code())
-            self.window.toast("Nuevo script creado a partir de la plantilla mínima")
+            self.window.toast("New script created from the minimal template")
 
         self.confirm_discard(proceed)
 
     def load_generated(self, template: Template, values: dict[str, Any], script_name: str,
                        description: str, directory: Path | None = None) -> None:
-        """Abre en el editor un script generado, todavía sin guardar."""
+        """Open a generated, not yet saved script in the editor."""
 
         def proceed() -> None:
             code = self._generate(template, values, script_name, description)
@@ -461,7 +461,7 @@ class StudioView(Gtk.Box):
         try:
             text = self.services.files.read(path)
         except FileServiceError as exc:
-            show_error(self, "No se pudo abrir el archivo", str(exc))
+            show_error(self, "Could not open the file", str(exc))
             self.services.state.remove_recent(path)
             return
         document = Document(path=path, script_name=path.name, mtime=path.stat().st_mtime)
@@ -475,10 +475,10 @@ class StudioView(Gtk.Box):
             self.save_as(on_saved)
             return
         if doc.mtime is not None and doc.path.exists() and doc.path.stat().st_mtime != doc.mtime:
-            ask(self, "El archivo ha cambiado en el disco",
-                f"Otro programa modificó {tilde_path(doc.path)} después de abrirlo. "
-                "Si guardas, se sustituirá su contenido (se creará una copia si está activada).",
-                [("cancel", "Cancelar", ""), ("overwrite", "Sobrescribir", "destructive")],
+            ask(self, "The file changed on disk",
+                f"Another program modified {tilde_path(doc.path)} after you opened it. "
+                "If you save, its content will be replaced (a backup is made if enabled).",
+                [("cancel", "Cancel", ""), ("overwrite", "Overwrite", "destructive")],
                 lambda r: r == "overwrite" and self._write(doc.path, on_saved, force_backup=True))
             return
         self._write(doc.path, on_saved)
@@ -495,21 +495,21 @@ class StudioView(Gtk.Box):
             name = normalize_script_name(doc.path.name if doc.path else doc.script_name)
         except InvalidNameError:
             name = UNTITLED
-        # El selector nativo pide confirmación si el archivo ya existe.
+        # The native chooser asks for confirmation if the file already exists.
         choose_file_to_save(self.window, name, folder, lambda path: self._write(path, on_saved, force_backup=True))
 
     def _write(self, path: Path, on_saved: Callable[[], None] | None = None, force_backup: bool = False) -> None:
         doc = self.document
         prefs = self.services.prefs.preferences
         same_file = doc.path is not None and doc.path == path
-        # Se copia el original la primera vez que se sobrescribe en la sesión (o si es otro archivo).
+        # The original is backed up the first time it is overwritten in the session (or if it is another file).
         needs_backup = force_backup or not same_file or not doc.backup_done
         backup = self.services.backup_service() if needs_backup else None
         try:
             result = self.services.files.save(path, self.editor.get_text(), overwrite=True, backup=backup,
                                               make_executable=prefs.executable_permissions)
         except FileServiceError as exc:
-            show_error(self, "No se pudo guardar", str(exc))
+            show_error(self, "Could not save", str(exc))
             return
         doc.path = result.path
         doc.script_name = result.path.name
@@ -518,9 +518,9 @@ class StudioView(Gtk.Box):
         self.editor.set_modified(False)
         self.editor.set_base_directory(result.path.parent)
         self.services.state.add_recent(result.path)
-        message = f"Guardado en {tilde_path(result.path)}"
+        message = f"Saved to {tilde_path(result.path)}"
         if result.backup_path:
-            message += f" · copia: {result.backup_path.name}"
+            message += f" · backup: {result.backup_path.name}"
         self.window.toast(message)
         self.refresh_files()
         self._update_state()
@@ -531,19 +531,19 @@ class StudioView(Gtk.Box):
         clear_container(self.files_list)
         self._file_paths = []
         directory = self._files_directory()
-        self.files_title.set_text(directory.name if directory else "Archivos")
+        self.files_title.set_text(directory.name if directory else "Files")
         self.files_title.set_tooltip_text(tilde_path(directory) if directory else None)
         if directory is None or not directory.is_dir():
-            self.files_list.append(self._placeholder_row("Guarda el script para ver su carpeta"))
+            self.files_list.append(self._placeholder_row("Save the script to see its folder"))
             return
         try:
             entries = sorted((p for p in directory.iterdir() if p.is_file() and not p.name.startswith(".")),
                              key=lambda p: (p.suffix not in (".sh", ".bash"), p.name.lower()))
         except OSError as exc:
-            self.files_list.append(self._placeholder_row(f"No se puede leer la carpeta: {exc.strerror}"))
+            self.files_list.append(self._placeholder_row(f"Cannot read the folder: {exc.strerror}"))
             return
         if not entries:
-            self.files_list.append(self._placeholder_row("La carpeta está vacía"))
+            self.files_list.append(self._placeholder_row("The folder is empty"))
         for path in entries[:300]:
             row = Gtk.ListBoxRow()
             box = Gtk.Box(spacing=8, margin_start=6, margin_end=6, margin_top=4, margin_bottom=4)
@@ -583,7 +583,7 @@ class StudioView(Gtk.Box):
             open_in_file_manager(self.window, directory)
 
     # ------------------------------------------------------------------
-    # Búsqueda y navegación
+    # Search and navigation
     # ------------------------------------------------------------------
 
     def show_search(self, replace: bool = False) -> None:
@@ -591,18 +591,18 @@ class StudioView(Gtk.Box):
         self.editor.search.open(replace=replace)
 
     def go_to_line(self) -> None:
-        entry = Gtk.Entry(placeholder_text="Número de línea", input_purpose=Gtk.InputPurpose.DIGITS,
+        entry = Gtk.Entry(placeholder_text="Line number", input_purpose=Gtk.InputPurpose.DIGITS,
                           activates_default=True)
 
         def on_response(response: str) -> None:
             if response == "go" and entry.get_text().strip().isdigit():
                 self.editor.goto_line(int(entry.get_text().strip()))
 
-        ask(self, "Ir a la línea", f"El archivo tiene {self.editor.buffer.get_line_count()} líneas.",
-            [("cancel", "Cancelar", ""), ("go", "Ir", "suggested")], on_response, default="go", extra_child=entry)
+        ask(self, "Go to line", f"The file has {self.editor.buffer.get_line_count()} lines.",
+            [("cancel", "Cancel", ""), ("go", "Go", "suggested")], on_response, default="go", extra_child=entry)
 
     # ------------------------------------------------------------------
-    # Validación
+    # Validation
     # ------------------------------------------------------------------
 
     def check_syntax(self) -> None:
@@ -610,7 +610,7 @@ class StudioView(Gtk.Box):
 
     def run_shellcheck(self) -> None:
         if not self.services.validation.shellcheck_available:
-            self.window.toast("ShellCheck no está instalado; consulta el README para instalarlo")
+            self.window.toast("ShellCheck is not installed; see the README to install it")
             return
         self._start_check("ShellCheck", self.services.validation.run_shellcheck, self.shellcheck_button)
 
@@ -624,15 +624,15 @@ class StudioView(Gtk.Box):
         self._check_jobs[tool] = job
         text = self.editor.get_text()
         button.set_sensitive(False)
-        self.problems_summary.set_text(f"Ejecutando {tool}…")
+        self.problems_summary.set_text(f"Running {tool}…")
 
         def done(result: CheckResult | Exception) -> None:
             if self._check_jobs.get(tool) is not job:
-                return  # se lanzó otra comprobación después
+                return  # a newer check was started
             del self._check_jobs[tool]
             button.set_sensitive(tool != "ShellCheck" or self.services.validation.shellcheck_available)
             if isinstance(result, Exception):
-                show_error(self, f"Error al ejecutar {tool}", str(result))
+                show_error(self, f"Error running {tool}", str(result))
                 return
             self._show_check_result(result)
 
@@ -657,20 +657,20 @@ class StudioView(Gtk.Box):
         self._problem_items = sorted(all_items, key=lambda d: (d.line or 0, d.column or 0))
         summary = self._last_summary
         if not self._diagnostics:
-            self.problems_summary.set_text(summary or "Pulsa «Comprobar sintaxis» para analizar el código sin ejecutarlo.")
+            self.problems_summary.set_text(summary or "Press \"Check syntax\" to analyze the code without running it.")
             return
         if self._diagnostics_stale:
-            summary = f"{summary} — el código cambió después del análisis; vuelve a comprobarlo."
+            summary = f"{summary} — the code changed after the analysis; check it again."
         elif not all_items:
-            summary = "Sin problemas detectados. Una sintaxis correcta no garantiza que el script sea seguro."
+            summary = "No problems found. Correct syntax does not guarantee that the script is safe."
         self.problems_summary.set_text(summary)
         for diagnostic in self._problem_items:
             row = Adw.ActionRow(activatable=diagnostic.line is not None)
             row.set_use_markup(False)
             row.set_title(diagnostic.message)
-            location = f"Línea {diagnostic.line}" if diagnostic.line else "Sin línea"
+            location = f"Line {diagnostic.line}" if diagnostic.line else "No line"
             if diagnostic.column:
-                location += f", columna {diagnostic.column}"
+                location += f", column {diagnostic.column}"
             source = f"{diagnostic.source} {diagnostic.code or ''}".strip()
             subtitle = f"{location} · {source}"
             if diagnostic.detail:
@@ -691,7 +691,7 @@ class StudioView(Gtk.Box):
     def _clear_bottom_panel(self) -> None:
         if self.bottom_stack.get_visible_child_name() == "output":
             self.output_buffer.set_text("")
-            self.output_status.set_text("Salida borrada.")
+            self.output_status.set_text("Output cleared.")
         else:
             self._diagnostics = {}
             self._last_summary = ""
@@ -699,18 +699,18 @@ class StudioView(Gtk.Box):
             self._render_problems()
 
     # ------------------------------------------------------------------
-    # Ejecución
+    # Execution
     # ------------------------------------------------------------------
 
     def run_script(self) -> None:
         self.window.show_section("studio")
         if self._session is not None and self._session.running:
-            self.window.toast("Ya hay un script en ejecución")
+            self.window.toast("A script is already running")
             return
         if self.document.path is None or self.editor.is_modified():
-            ask(self, "Guarda antes de ejecutar",
-                "Solo se ejecutan archivos guardados, para que sepas exactamente qué código se ejecuta.",
-                [("cancel", "Cancelar", ""), ("save", "Guardar y continuar", "suggested")],
+            ask(self, "Save before running",
+                "Only saved files are run, so you know exactly which code is executed.",
+                [("cancel", "Cancel", ""), ("save", "Save and continue", "suggested")],
                 lambda r: r == "save" and self.save(on_saved=self._confirm_run), default="save")
             return
         self._confirm_run()
@@ -721,28 +721,28 @@ class StudioView(Gtk.Box):
         try:
             preview = build_plan(path)
         except ExecutionError as exc:
-            show_error(self, "No se puede ejecutar", str(exc))
+            show_error(self, "Cannot run", str(exc))
             return
         risks = analyze_risks(self.editor.get_text())
 
         details = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         grid = Gtk.Grid(column_spacing=12, row_spacing=4)
         facts = [
-            ("Archivo", tilde_path(path)),
-            ("Intérprete", preview.interpreter),
-            ("Directorio", tilde_path(preview.cwd or path.parent)),
-            ("Privilegios", "Los de tu usuario; no se usa sudo"),
-            ("Entrada", "Sin entrada interactiva (stdin cerrado)"),
+            ("File", tilde_path(path)),
+            ("Interpreter", preview.interpreter),
+            ("Directory", tilde_path(preview.cwd or path.parent)),
+            ("Privileges", "Your user's; sudo is never used"),
+            ("Input", "No interactive input (stdin closed)"),
         ]
         for index, (name, value) in enumerate(facts):
             grid.attach(label(name, css=("dim-label",)), 0, index, 1, 1)
             grid.attach(label(value, wrap=True, selectable=True), 1, index, 1, 1)
         details.append(grid)
-        args_entry = Gtk.Entry(placeholder_text="Argumentos (opcional), p. ej. --help", activates_default=False)
-        args_entry.update_property([Gtk.AccessibleProperty.LABEL], ["Argumentos"])
+        args_entry = Gtk.Entry(placeholder_text="Arguments (optional), e.g. --help", activates_default=False)
+        args_entry.update_property([Gtk.AccessibleProperty.LABEL], ["Arguments"])
         details.append(args_entry)
         if risks:
-            details.append(label("El análisis detectó órdenes que pueden modificar el sistema:",
+            details.append(label("The analysis found commands that may modify the system:",
                                  css=("warning",), wrap=True))
             for risk in risks:
                 details.append(label(f"• {risk}", wrap=True, css=("caption",)))
@@ -753,21 +753,21 @@ class StudioView(Gtk.Box):
             try:
                 plan = build_plan(path, args_entry.get_text())
             except ExecutionError as exc:
-                show_error(self, "No se puede ejecutar", str(exc))
+                show_error(self, "Cannot run", str(exc))
                 return
             self._start_session(plan)
 
-        ask(self, "¿Ejecutar este script?",
-            "La ejecución no está aislada: el script actúa con tus permisos y puede modificar archivos. "
-            "Comprobar la sintaxis no garantiza que sea inocuo.",
-            [("cancel", "Cancelar", ""), ("run", "Ejecutar", "destructive" if risks else "suggested")],
+        ask(self, "Run this script?",
+            "Execution is not sandboxed: the script runs with your permissions and can modify files. "
+            "Checking the syntax does not guarantee that it is harmless.",
+            [("cancel", "Cancel", ""), ("run", "Run", "destructive" if risks else "suggested")],
             on_response, default="cancel", extra_child=details)
 
     def _start_session(self, plan) -> None:
         self.bottom_toggle.set_active(True)
         self.bottom_stack.set_visible_child_name("output")
         self._append_output("meta", f"$ {plan.command_line()}\n")
-        self.output_status.set_text(f"Ejecutando {plan.script.name}…")
+        self.output_status.set_text(f"Running {plan.script.name}…")
         session = ExecutionSession(
             plan,
             on_output=lambda stream, text: idle(self._append_output, stream, text),
@@ -776,7 +776,7 @@ class StudioView(Gtk.Box):
         try:
             session.start()
         except ExecutionError as exc:
-            show_error(self, "No se pudo ejecutar", str(exc))
+            show_error(self, "Could not run", str(exc))
             return
         self._session = session
         self.run_button.set_sensitive(False)
@@ -793,11 +793,11 @@ class StudioView(Gtk.Box):
 
     def _on_session_exit(self, session: ExecutionSession, code: int | None, cancelled: bool) -> None:
         if cancelled:
-            status = "Ejecución cancelada"
+            status = "Execution cancelled"
         elif code == 0:
-            status = "Terminó correctamente (código 0)"
+            status = "Finished successfully (exit code 0)"
         else:
-            status = f"Terminó con el código {code}"
+            status = f"Finished with exit code {code}"
         self._append_output("meta", f"\n[{status}]\n\n")
         self.output_status.set_text(status)
         if self._session is session:
@@ -809,7 +809,7 @@ class StudioView(Gtk.Box):
     def stop_script(self) -> None:
         if self._session is not None:
             self._session.cancel()
-            self.output_status.set_text("Deteniendo…")
+            self.output_status.set_text("Stopping…")
 
     def shutdown(self) -> None:
         for job in self._check_jobs.values():
@@ -818,7 +818,7 @@ class StudioView(Gtk.Box):
             self._session.cancel(grace_seconds=1.0)
 
     # ------------------------------------------------------------------
-    # Panel de generación
+    # Generation panel
     # ------------------------------------------------------------------
 
     def reload_templates(self) -> None:
@@ -865,7 +865,7 @@ class StudioView(Gtk.Box):
         self._preview_source = GLib.timeout_add(150, self._update_preview)
 
     def _panel_code(self) -> tuple[str | None, str | None]:
-        """Devuelve ``(código, error)`` según el estado actual del panel."""
+        """Return ``(code, error)`` for the current panel state."""
         template = self._panel_template()
         values = self.panel_form.values()
         try:
@@ -875,7 +875,7 @@ class StudioView(Gtk.Box):
         _, errors = template.validate(values)
         self.panel_form.show_errors(errors)
         if errors:
-            return None, "Corrige los parámetros marcados: " + "; ".join(errors.values())
+            return None, "Fix the highlighted parameters: " + "; ".join(errors.values())
         try:
             return self._generate(template, values, name, self.description_row.get_text()), None
         except GenerationError as exc:
@@ -894,7 +894,7 @@ class StudioView(Gtk.Box):
     def regenerate(self) -> None:
         code, error = self._panel_code()
         if code is None:
-            show_error(self, "No se puede generar", error or "")
+            show_error(self, "Cannot generate", error or "")
             return
         template = self._panel_template()
 
@@ -907,24 +907,24 @@ class StudioView(Gtk.Box):
             if doc.path is None:
                 doc.script_name = normalize_script_name(self.name_row.get_text())
             self._update_state()
-            self.window.toast("Código aplicado al editor (Ctrl+Z para deshacer)")
+            self.window.toast("Code applied to the editor (Ctrl+Z to undo)")
 
         if self.editor.get_text().strip() and self.editor.get_text() != code:
-            ask(self, "¿Reemplazar el contenido del editor?",
-                "El código actual se sustituirá por el generado. Podrás deshacerlo con Ctrl+Z.",
-                [("cancel", "Cancelar", ""), ("replace", "Reemplazar", "suggested")],
+            ask(self, "Replace the editor content?",
+                "The current code will be replaced with the generated code. You can undo it with Ctrl+Z.",
+                [("cancel", "Cancel", ""), ("replace", "Replace", "suggested")],
                 lambda r: r == "replace" and apply(), default="replace")
         else:
             apply()
 
     def save_as_template(self) -> None:
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
-        name_entry = Gtk.Entry(placeholder_text="Nombre de la plantilla")
-        description_entry = Gtk.Entry(placeholder_text="Descripción (opcional)")
+        name_entry = Gtk.Entry(placeholder_text="Template name")
+        description_entry = Gtk.Entry(placeholder_text="Description (optional)")
         box.append(name_entry)
         box.append(description_entry)
-        box.append(label("Puedes usar {{script_name}} y {{description}} en el código; "
-                         "se sustituirán al generar.", css=("dim-label", "caption"), wrap=True))
+        box.append(label("You can use {{script_name}} and {{description}} in the code; "
+                         "they are replaced when generating.", css=("dim-label", "caption"), wrap=True))
 
         def on_response(response: str) -> None:
             if response != "save":
@@ -933,11 +933,11 @@ class StudioView(Gtk.Box):
                 template = self.services.templates.save_custom(
                     name_entry.get_text(), description_entry.get_text(), self.editor.get_text())
             except (ValueError, OSError) as exc:
-                show_error(self, "No se pudo guardar la plantilla", str(exc))
+                show_error(self, "Could not save the template", str(exc))
                 return
             self.window.templates_changed()
-            self.window.toast(f"Plantilla «{template.name}» guardada en la biblioteca")
+            self.window.toast(f"Template \"{template.name}\" saved to the library")
 
-        ask(self, "Guardar como plantilla", "El contenido actual del editor se guardará como plantilla personalizada.",
-            [("cancel", "Cancelar", ""), ("save", "Guardar", "suggested")], on_response, default="save",
+        ask(self, "Save as template", "The current editor content will be saved as a custom template.",
+            [("cancel", "Cancel", ""), ("save", "Save", "suggested")], on_response, default="save",
             extra_child=box)

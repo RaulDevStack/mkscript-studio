@@ -1,4 +1,4 @@
-/* Paleta grafito para el modo oscuro (libadwaita >= 1.6). */
+/* Graphite palette for dark mode (libadwaita >= 1.6). */
 :root {
   --accent-color: #2dd4bf;
   --accent-bg-color: #0d8075;

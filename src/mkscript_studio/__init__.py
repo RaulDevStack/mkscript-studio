@@ -1,4 +1,4 @@
-"""MKSCRIPT Studio: taller visual para scripts Bash."""
+"""MKSCRIPT Studio: a visual workshop for Bash scripts."""
 
 __version__ = "0.1.0"
 APP_ID = "io.github.rauldevstack.MkscriptStudio"

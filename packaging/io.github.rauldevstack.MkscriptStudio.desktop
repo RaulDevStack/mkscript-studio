@@ -1,12 +1,12 @@
 [Desktop Entry]
 Type=Application
 Name=MKSCRIPT Studio
-GenericName=Editor de scripts Bash
-Comment=Crea, edita, valida y guarda scripts Bash
+GenericName=Bash Script Editor
+Comment=Create, edit, validate and save Bash scripts
 Exec=mkscript-studio %f
 Icon=io.github.rauldevstack.MkscriptStudio
 Terminal=false
 Categories=Development;IDE;GTK;
-Keywords=bash;shell;script;editor;plantillas;
+Keywords=bash;shell;script;editor;templates;
 MimeType=application/x-shellscript;text/x-sh;
 StartupNotify=true

@@ -1,4 +1,4 @@
-"""Utilidades de interfaz compartidas: diálogos, hilos y selección de archivos."""
+"""Shared UI helpers: dialogs, threads and file choosers."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 from gi.repository import Adw, Gio, GLib, Gtk, Pango  # noqa: E402
 
-Response = tuple[str, str, str]  # (id, etiqueta, apariencia: "", "suggested", "destructive")
+Response = tuple[str, str, str]  # (id, label, appearance: "", "suggested", "destructive")
 
 _APPEARANCE = {
     "suggested": Adw.ResponseAppearance.SUGGESTED,
@@ -31,7 +31,7 @@ def ask(
     close: str = "cancel",
     extra_child: Gtk.Widget | None = None,
 ) -> None:
-    """Diálogo nativo de libadwaita. ``callback`` recibe el id de la respuesta."""
+    """Native libadwaita dialog. ``callback`` receives the response id."""
     if hasattr(Adw, "AlertDialog"):
         dialog = Adw.AlertDialog(heading=heading, body=body)
     else:  # libadwaita < 1.5
@@ -53,16 +53,16 @@ def ask(
 
 
 def show_error(parent: Gtk.Widget, heading: str, message: str) -> None:
-    ask(parent, heading, message, [("close", "Cerrar", "")], lambda _r: None, default="close", close="close")
+    ask(parent, heading, message, [("close", "Close", "")], lambda _r: None, default="close", close="close")
 
 
 def run_async(func: Callable[[], Any], on_done: Callable[[Any], None]) -> threading.Thread:
-    """Ejecuta ``func`` en un hilo y entrega el resultado (o la excepción) en el hilo de GTK."""
+    """Run ``func`` in a thread and deliver the result (or exception) on the GTK thread."""
 
     def worker() -> None:
         try:
             result: Any = func()
-        except Exception as exc:  # se entrega a la interfaz para mostrarlo
+        except Exception as exc:  # handed to the UI to display
             result = exc
         GLib.idle_add(_deliver, on_done, result)
 
@@ -77,7 +77,7 @@ def _deliver(on_done: Callable[[Any], None], result: Any) -> bool:
 
 
 def idle(func: Callable[..., Any], *args: Any) -> None:
-    """Programa ``func`` en el hilo principal (para callbacks desde otros hilos)."""
+    """Schedule ``func`` on the main thread (for callbacks from other threads)."""
 
     def call() -> bool:
         func(*args)
@@ -88,12 +88,12 @@ def idle(func: Callable[..., Any], *args: Any) -> None:
 
 def _script_filters() -> tuple[Gio.ListStore, Gtk.FileFilter]:
     scripts = Gtk.FileFilter()
-    scripts.set_name("Scripts de shell")
+    scripts.set_name("Shell scripts")
     scripts.add_pattern("*.sh")
     scripts.add_pattern("*.bash")
     scripts.add_mime_type("application/x-shellscript")
     everything = Gtk.FileFilter()
-    everything.set_name("Todos los archivos")
+    everything.set_name("All files")
     everything.add_pattern("*")
     store = Gio.ListStore.new(Gtk.FileFilter)
     store.append(scripts)
@@ -105,13 +105,13 @@ def _finish(dialog: Gtk.FileDialog, method: str, result: Gio.AsyncResult, callba
     try:
         gfile = getattr(dialog, method)(result)
     except GLib.Error:
-        return  # cancelado por el usuario
+        return  # cancelled by the user
     if gfile is not None and gfile.get_path():
         callback(Path(gfile.get_path()))
 
 
 def choose_file_to_open(parent: Gtk.Window, callback: Callable[[Path], None], folder: Path | None = None) -> None:
-    dialog = Gtk.FileDialog(title="Abrir script", modal=True)
+    dialog = Gtk.FileDialog(title="Open script", modal=True)
     filters, default = _script_filters()
     dialog.set_filters(filters)
     dialog.set_default_filter(default)
@@ -121,8 +121,8 @@ def choose_file_to_open(parent: Gtk.Window, callback: Callable[[Path], None], fo
 
 
 def choose_file_to_save(parent: Gtk.Window, name: str, folder: Path | None, callback: Callable[[Path], None]) -> None:
-    """El selector de GTK pide confirmación si el archivo elegido ya existe."""
-    dialog = Gtk.FileDialog(title="Guardar script", modal=True)
+    """The GTK chooser asks for confirmation if the chosen file already exists."""
+    dialog = Gtk.FileDialog(title="Save script", modal=True)
     filters, default = _script_filters()
     dialog.set_filters(filters)
     dialog.set_default_filter(default)
@@ -133,7 +133,7 @@ def choose_file_to_save(parent: Gtk.Window, name: str, folder: Path | None, call
 
 
 def choose_folder(parent: Gtk.Window, callback: Callable[[Path], None], folder: Path | None = None) -> None:
-    dialog = Gtk.FileDialog(title="Elegir carpeta", modal=True)
+    dialog = Gtk.FileDialog(title="Choose folder", modal=True)
     if folder is not None and folder.is_dir():
         dialog.set_initial_folder(Gio.File.new_for_path(str(folder)))
     dialog.select_folder(parent, None, lambda d, r: _finish(d, "select_folder_finish", r, callback))
@@ -145,7 +145,7 @@ def open_in_file_manager(parent: Gtk.Window, path: Path) -> None:
 
 
 def tilde_path(path: Path | str) -> str:
-    """Muestra las rutas de la carpeta personal con ``~``."""
+    """Show paths inside the home folder with ``~``."""
     text = str(path)
     home = str(Path.home())
     if text == home:

@@ -1,4 +1,4 @@
-"""Ejecución de procesos auxiliares con límite de tiempo y cancelación."""
+"""Running helper processes with a time limit and cancellation."""
 
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ class ProcessOutput:
 
 
 def clean_environment() -> dict[str, str]:
-    """Entorno sin variables que harían que Bash ejecute archivos al arrancar."""
+    """Environment without variables that would make Bash run files at startup."""
     env = dict(os.environ)
     for name in ("BASH_ENV", "ENV", "SHELLOPTS", "BASHOPTS", "PROMPT_COMMAND"):
         env.pop(name, None)
@@ -27,7 +27,7 @@ def clean_environment() -> dict[str, str]:
 
 
 class CancellableProcess:
-    """Ejecuta un único proceso; ``cancel()`` puede llamarse desde otro hilo."""
+    """Run a single process; ``cancel()`` may be called from another thread."""
 
     def __init__(self) -> None:
         self._lock = threading.Lock()

@@ -1,89 +1,88 @@
 # MKSCRIPT Studio
 
-Taller visual para **crear, personalizar, editar, validar y guardar scripts Bash** en Linux.
-Es la evolución de [mkscript](https://github.com/RaulDevStack/mkscript): mantiene sus ideas
-(plantillas, nombres validados, extensión `.sh` automática, permisos de ejecución, no sobrescribir
-archivos y abrir el resultado en un editor) y las lleva a una aplicación de escritorio GTK 4 con
-un editor integrado.
+A visual workshop to **create, customize, edit, validate and save Bash scripts** on Linux.
+It is the evolution of [mkscript](https://github.com/RaulDevStack/mkscript): it keeps its ideas
+(templates, validated names, automatic `.sh` extension, executable permissions, never overwriting
+files, opening the result in an editor) and turns them into a GTK 4 desktop application with a
+built-in code editor.
 
-El código Bash es siempre visible y editable. Los formularios solo ayudan a generarlo.
+The Bash code is always visible and editable. The forms only help you generate it.
 
-## Funcionalidades
+## Features
 
-| Sección | Qué incluye |
+| Section | What it includes |
 | --- | --- |
-| **Inicio** | Nuevo script, abrir archivo, recientes, plantillas favoritas, accesos rápidos y resumen de preferencias. |
-| **Biblioteca** | 7 plantillas por categorías, búsqueda, filtro por categoría y favoritas, formulario de parámetros validado, aviso de riesgos, vista previa en tiempo real, «Abrir en Studio» y «Generar y guardar». Plantillas personalizadas (crear desde Studio y eliminar). |
-| **Studio** | Editor GtkSourceView con resaltado Bash, números de línea, indentación configurable, deshacer/rehacer, buscar y reemplazar (mayúsculas, palabra completa, regex), autocompletado con Tab, panel de archivos de la carpeta, panel de generación con vista previa, panel de problemas (bash -n y ShellCheck con marcas en el margen) y panel de salida de ejecución. Barra de estado con ruta, estado de guardado, línea/columna e indentación. |
-| **Proyectos** | Crear, añadir carpeta existente, renombrar, duplicar, quitar de la lista (sin borrar archivos), abrir la carpeta y abrir sus scripts. |
-| **Preferencias** | Shell, estilo de comentarios, modo estricto, colores, carpeta de salida, permisos, copias de seguridad, editor, autocompletado y tema. Se guardan al momento. |
+| **Home** | New script, open file, recent files, favorite templates, shortcuts and a summary of your preferences. |
+| **Library** | 7 templates by category, search, category and favorites filters, validated parameter form, risk notice, live preview, "Open in Studio" and "Generate and save". Custom templates (create them from Studio and delete them). |
+| **Studio** | GtkSourceView editor with Bash highlighting, line numbers, configurable indentation, undo/redo, find and replace (match case, whole word, regex), Tab completion, a files panel for the current folder, a generation panel with preview, a problems panel (bash -n and ShellCheck, with marks in the gutter) and an execution output panel. Status bar with path, save state, line/column and indentation. |
+| **Projects** | Create, add an existing folder, rename, duplicate, remove from the list (without deleting files), open the folder and open its scripts. |
+| **Preferences** | Shell, comment style, strict mode, colors, output folder, permissions, backups, editor, autocompletion and theme. Saved immediately. |
 
-### Plantillas
+### Templates
 
-| Id | Plantilla | Riesgo |
+| Id | Template | Risk |
 | --- | --- | --- |
-| `minimal` | Script mínimo | Bajo |
-| `cli-tool` | Herramienta CLI con argumentos (`--help`, `--version`, opciones, posicional) | Bajo |
-| `backup` | Copia de seguridad con `tar` fechada y exclusiones | Medio |
-| `cleanup-temp` | Limpieza controlada de temporales (simulación por defecto, `--apply` y confirmación) | Alto |
-| `process-monitor` | Monitorización de un proceso con `pgrep`/`ps` | Bajo |
-| `file-organizer` | Organización de archivos por extensión (simulación por defecto, `mv -n`) | Medio |
-| `service-check` | Estado de servicios con `systemctl is-active` | Bajo |
+| `minimal` | Minimal script | Low |
+| `cli-tool` | CLI tool with arguments (`--help`, `--version`, flags, positional argument) | Low |
+| `backup` | Timestamped `tar` backup with exclusions | Medium |
+| `cleanup-temp` | Controlled cleanup of temporary files (dry run by default, `--apply` and confirmation) | High |
+| `process-monitor` | Monitor a process with `pgrep`/`ps` | Low |
+| `file-organizer` | Sort files by extension (dry run by default, `mv -n`) | Medium |
+| `service-check` | Service status with `systemctl is-active` | Low |
 
-Las plantillas que pueden modificar datos solo actúan con `--apply`, comprueban sus rutas y
-rechazan carpetas del sistema o la carpeta personal completa. Las excepciones legítimas al modo
-estricto (`pgrep` sin coincidencias, `systemctl is-active` de un servicio caído) se tratan de forma
-explícita en `if` o con `|| true` comentado. Generar una plantilla nunca ejecuta nada.
+Templates that can modify data only act with `--apply`, check their paths and refuse system folders
+or the whole home folder. Legitimate exceptions to strict mode (`pgrep` with no match, `systemctl
+is-active` on a stopped service) are handled explicitly inside `if` or with a commented `|| true`.
+Generating a template never runs anything.
 
-### Autocompletado
+### Autocompletion
 
 - `ec` + <kbd>Tab</kbd> → `echo`; `mkd` → `mkdir`; `gre` → `grep`.
-- Si hay varias coincidencias (`pr` → `printf`, `printenv`), Tab amplía el prefijo común y muestra
-  una lista. ↑/↓ para moverse, <kbd>Tab</kbd> o <kbd>Intro</kbd> para confirmar, <kbd>Esc</kbd> para cerrar.
-- Sin coincidencias, al principio de línea, en comentarios o dentro de comillas simples, Tab indenta
-  con normalidad. Con texto seleccionado, Tab indenta la selección.
-- Solo se sustituye el prefijo anterior al cursor.
-- Distingue funciones del archivo, builtins, palabras reservadas, órdenes, variables (`$VAR`,
-  `${VAR}`) y rutas (`./`, `~/`, `/`). Sugiere `in` tras `for x`. Las órdenes del `PATH` son opcionales.
-- Las sugerencias aparecen mientras se escribe (configurable) y con <kbd>Ctrl</kbd>+<kbd>Espacio</kbd>.
-- El contenido del editor se analiza como texto; nunca se ejecuta para obtener sugerencias.
+- With several matches (`pr` → `printf`, `printenv`), Tab extends the common prefix and shows a
+  list. ↑/↓ to move, <kbd>Tab</kbd> or <kbd>Enter</kbd> to accept, <kbd>Esc</kbd> to close.
+- With no match, at the start of a line, in comments or inside single quotes, Tab indents as usual.
+  With a selection, Tab indents the selection.
+- Only the prefix before the cursor is replaced.
+- Distinguishes functions defined in the file, builtins, keywords, commands, variables (`$VAR`,
+  `${VAR}`) and paths (`./`, `~/`, `/`). Suggests `in` after `for x`. Commands from `PATH` are optional.
+- Suggestions appear while typing (configurable) and with <kbd>Ctrl</kbd>+<kbd>Space</kbd>.
+- The editor content is analyzed as text; it is never executed to compute suggestions.
 
-### Seguridad
+### Safety
 
-- **No se sobrescribe nada en silencio.** «Generar y guardar» pide confirmación si el archivo existe
-  y el diálogo «Guardar como» de GTK también lo hace.
-- **Copias de seguridad** con fecha y hora (`nombre.sh.AAAAMMDD-HHMMSS.bak`, o `-1`, `-2`… si ya
-  existe una) antes de sobrescribir. Se crean con apertura exclusiva y nunca se borran solas. En
-  Studio, la copia del archivo original se hace la primera vez que se sobrescribe en la sesión; los
-  guardados siguientes del mismo documento no generan más copias.
-- **Escritura atómica** (archivo temporal + `os.replace`), conservando los permisos existentes. La `x`
-  solo se añade donde ya hay `r`. Si el archivo cambió en el disco tras abrirlo, se pide confirmación.
-- **Comprobar sintaxis** usa `bash --noprofile --norc -n` por la entrada estándar, sin `BASH_ENV`, con
-  límite de tiempo y en un hilo aparte. No ejecuta el script. Una sintaxis correcta **no** demuestra
-  que el script sea seguro.
-- **Ejecutar** es una acción aparte que exige guardar primero. Muestra el archivo, el intérprete, el
-  directorio, que no se eleva ningún privilegio y las órdenes potencialmente peligrosas detectadas, y
-  pide confirmación. Usa una lista de argumentos (`shell=False`), stdin cerrado y nunca `sudo`. Se
-  puede detener (SIGTERM al grupo y SIGKILL tras 3 s). **No es un sandbox**: el script se ejecuta con
-  los permisos de tu usuario.
+- **Nothing is overwritten silently.** "Generate and save" asks for confirmation if the file exists,
+  and GTK's "Save as" dialog does too.
+- **Timestamped backups** (`name.sh.YYYYMMDD-HHMMSS.bak`, or `-1`, `-2`… if one already exists)
+  before overwriting. They are created with exclusive open and are never deleted automatically. In
+  Studio, the original file is backed up the first time it is overwritten in a session; later saves
+  of the same document do not create more backups.
+- **Atomic writes** (temporary file + `os.replace`), keeping existing permissions. `x` is only added
+  where `r` is already set. If the file changed on disk after you opened it, you are asked first.
+- **Check syntax** runs `bash --noprofile --norc -n` on stdin, without `BASH_ENV`, with a time limit
+  and in a background thread. It never runs the script. Correct syntax does **not** prove the script
+  is safe.
+- **Run** is a separate action that requires saving first. It shows the file, interpreter and
+  directory, states that no privileges are elevated, lists potentially dangerous commands it found,
+  and asks for confirmation. It uses an argument list (`shell=False`), a closed stdin and never
+  `sudo`. It can be stopped (SIGTERM to the process group, SIGKILL after 3 s). **It is not a
+  sandbox**: the script runs with your user's permissions.
 
-## Instalación
+## Installation
 
-MKSCRIPT Studio se ejecuta directamente desde la carpeta descargada: no hay que compilar nada ni usar
-pip. Solo hacen falta unos paquetes del sistema, que el propio lanzador instala.
+MKSCRIPT Studio runs straight from the downloaded folder: nothing to compile and no pip. It only
+needs a few system packages, which the launcher can install for you.
 
-### Requisitos
+### Requirements
 
-- Una distribución Linux reciente con escritorio: Kali, Debian 13, Ubuntu 24.04, Fedora 39, Arch o
-  posteriores.
-- Python 3.11 o posterior, GTK 4.10 o posterior, libadwaita 1.4 o posterior, GtkSourceView 5 y
-  PyGObject. El paso 2 los instala.
-- `git` para descargar y actualizar el programa.
-- Opcional: `shellcheck`, para el análisis estático adicional. El paso 2 también lo instala.
+- A recent Linux distribution with a desktop: Kali, Debian 13, Ubuntu 24.04, Fedora 39, Arch or
+  later.
+- Python 3.11+, GTK 4.10+, libadwaita 1.4+, GtkSourceView 5 and PyGObject. Step 2 installs them.
+- `git` to download and update the program.
+- Optional: `shellcheck`, for additional static analysis. Step 2 installs it as well.
 
-Debian 12 y Ubuntu 22.04 traen un libadwaita demasiado antiguo y no son compatibles.
+Debian 12 and Ubuntu 22.04 ship a libadwaita that is too old and are not supported.
 
-### 1. Descargar
+### 1. Download
 
 ```bash
 git clone --depth 1 https://github.com/RaulDevStack/mkscript-studio.git
@@ -93,145 +92,148 @@ git clone --depth 1 https://github.com/RaulDevStack/mkscript-studio.git
 cd mkscript-studio
 ```
 
-`--depth 1` descarga solo la última versión, sin historial. Si no tienes git, instálalo antes con
-`sudo apt install git` (o `dnf` / `pacman`).
+`--depth 1` downloads only the latest version, without history. If you do not have git, install it
+first with `sudo apt install git` (or `dnf` / `pacman`).
 
-### 2. Instalar las dependencias (solo la primera vez)
+### 2. Install the dependencies (first time only)
 
 ```bash
 ./mkscript-studio --install-deps
 ```
 
-El lanzador detecta tu gestor de paquetes, muestra la orden que va a ejecutar y pide tu contraseña
-de sudo. Si prefieres instalarlas a mano, estas son las órdenes equivalentes:
+The launcher detects your package manager, shows the command it will run and asks for your sudo
+password. If you prefer to install them yourself, these are the equivalent commands:
 
-| Distribución | Orden |
+| Distribution | Command |
 | --- | --- |
 | Kali, Debian, Ubuntu | `sudo apt install python3 python3-gi gir1.2-gtk-4.0 gir1.2-adw-1 gir1.2-gtksource-5 shellcheck` |
 | Fedora | `sudo dnf install python3 python3-gobject gtk4 libadwaita gtksourceview5 ShellCheck` |
 | Arch Linux | `sudo pacman -S python python-gobject gtk4 libadwaita gtksourceview5 shellcheck` |
 
-Para comprobar que todo está listo sin abrir la aplicación:
+To check that everything is ready without opening the application:
 
 ```bash
 ./mkscript-studio --check
 ```
 
-### 3. Abrir el programa
+### 3. Open the program
 
 ```bash
 ./mkscript-studio
 ```
 
-También puedes abrir un script directamente:
+You can also open a script directly:
 
 ```bash
 ./mkscript-studio ~/Scripts/backup.sh
 ```
 
-Ejecútalo con tu usuario normal, no como `root`: la configuración se guarda en tu carpeta personal y
-las aplicaciones gráficas lanzadas como root suelen fallar al abrir la ventana.
+Run it as your normal user, not as `root`: settings are stored in your home folder, and graphical
+applications started as root often fail to open their window.
 
-### 4. Añadirlo al menú de aplicaciones (opcional)
+### 4. Add it to the application menu (optional)
 
 ```bash
 bash packaging/install-desktop.sh
 ```
 
-Crea el acceso directo «MKSCRIPT Studio» en el menú del escritorio sin necesidad de sudo. El acceso
-apunta a esta carpeta: si la mueves de sitio, vuelve a ejecutar la orden.
+Creates a "MKSCRIPT Studio" entry in your desktop menu, no sudo needed. The entry points at this
+folder: if you move it, run the command again.
 
-### Actualizar
+### Update
 
-Dentro de la carpeta del programa:
+Inside the program folder:
 
 ```bash
 git pull
 ```
 
-La próxima vez que lo abras (desde el terminal o desde el menú) usará la versión nueva.
+The next time you open it (from the terminal or the menu) it uses the new version.
 
-### Desinstalar
+### Uninstall
 
-Borra la carpeta del programa y, si lo añadiste al menú, el acceso directo y el icono:
+Delete the program folder and, if you added it to the menu, the menu entry and icon:
 
 ```bash
 rm -f ~/.local/share/applications/io.github.rauldevstack.MkscriptStudio.desktop ~/.local/share/icons/hicolor/scalable/apps/io.github.rauldevstack.MkscriptStudio.svg
 ```
 
-Tus preferencias están en `~/.config/mkscript-studio`, y los recientes, proyectos y plantillas propias
-en `~/.local/share/mkscript-studio`. Bórralos solo si no quieres conservarlos. Los scripts que hayas
-guardado (por defecto en `~/Scripts`) no se tocan.
+Your preferences live in `~/.config/mkscript-studio`, and recent files, projects and custom templates
+in `~/.local/share/mkscript-studio`. Delete them only if you do not want to keep them. Scripts you
+saved (in `~/Scripts` by default) are not touched.
 
-### Problemas frecuentes
+### Troubleshooting
 
-| Mensaje | Solución |
+| Message | Solution |
 | --- | --- |
-| `Faltan dependencias del sistema` | Ejecuta `./mkscript-studio --install-deps`. |
-| `versiones demasiado antiguas` | Tu distribución es anterior a las compatibles; hace falta una más reciente. |
-| `Permission denied` al ejecutar `./mkscript-studio` | Usa `bash mkscript-studio` o da permiso con `chmod +x mkscript-studio`. |
-| `Could not resolve host: github.com` | El equipo no tiene conexión a internet o falla el DNS. |
-| `fatal: could not create work tree dir` | La carpeta actual ya no existe; ejecuta `cd ~` y repite el `git clone`. |
+| `Missing system dependencies` | Run `./mkscript-studio --install-deps`. |
+| `versions that are too old` | Your distribution is older than the supported ones; you need a more recent one. |
+| `Permission denied` when running `./mkscript-studio` | Use `bash mkscript-studio` or make it executable with `chmod +x mkscript-studio`. |
+| `Could not resolve host: github.com` | The machine has no internet connection or DNS is not working. |
+| `fatal: could not create work tree dir` | The current folder no longer exists; run `cd ~` and repeat the `git clone`. |
 
-## Arquitectura
+## Architecture
 
 ```text
 src/mkscript_studio/
-├── app.py, window.py          # Adw.Application, ventana, navegación, acciones y atajos
-├── context.py                 # Servicios compartidos (sin GTK)
-├── paths.py, persistence.py   # Rutas XDG, ~, JSON atómico y cuarentena de archivos dañados
-├── preferences/               # Modelo validado + almacén con notificaciones
-├── generator/                 # Modelos, motor determinista, plantillas y escapes Bash
+├── app.py, window.py          # Adw.Application, window, navigation, actions and shortcuts
+├── context.py                 # Shared services (no GTK)
+├── paths.py, persistence.py   # XDG paths, ~, atomic JSON and quarantine of damaged files
+├── preferences/               # Validated model + store with change notifications
+├── generator/                 # Models, deterministic engine, templates and Bash escaping
 ├── editor/
-│   ├── completion.py          # Motor de autocompletado y lógica de Tab (puro Python)
-│   ├── bash_words.py          # Vocabulario con descripciones
-│   └── code_editor.py         # GtkSourceView + lista de sugerencias + buscar/reemplazar
-├── services/                  # Archivos, copias, validación, ejecución, procesos, proyectos, estado
-├── ui/                        # Vistas: inicio, biblioteca, studio, proyectos, preferencias
-└── resources/                 # CSS (paleta grafito/turquesa), esquemas del editor, icono
+│   ├── completion.py          # Autocompletion engine and Tab logic (pure Python)
+│   ├── bash_words.py          # Vocabulary with descriptions
+│   └── code_editor.py         # GtkSourceView + suggestion list + find/replace
+├── services/                  # Files, backups, validation, execution, processes, projects, state
+├── ui/                        # Views: home, library, studio, projects, preferences
+└── resources/                 # CSS (graphite/teal palette), editor color schemes, icon
 ```
 
-Todo lo que está fuera de `app.py`, `window.py`, `editor/code_editor.py` y `ui/` funciona sin GTK.
+Everything outside `app.py`, `window.py`, `editor/code_editor.py` and `ui/` works without GTK.
 
-### Decisiones técnicas
+### Technical decisions
 
-- **GTK 4 + libadwaita + GtkSourceView 5**: aplicación nativa de GNOME. GtkSourceView aporta
-  resaltado, números de línea, indentación, deshacer y búsqueda mantenidos por GNOME, así que no hubo
-  que escribir un editor desde cero.
-- **Lista de sugerencias propia** (un `Gtk.Popover` que no roba el foco) en lugar de
-  `GtkSourceCompletion`. El comportamiento de Tab que se pedía (completar directamente si hay una sola
-  coincidencia, indentar si no hay ninguna) necesita control total del teclado. Además, la lógica vive
-  en `completion.resolve_tab`, que es Python puro.
-- **JSON** para preferencias, estado, proyectos y plantillas propias. Son pocos datos y así se pueden
-  leer y editar a mano; SQLite no aportaba nada. Los archivos dañados se apartan
-  (`*.corrupt-FECHA`) en lugar de borrarse.
-- **Solo Bash**: el selector de shell muestra únicamente Bash y lo explica. Zsh y POSIX sh se añadirán
-  cuando el motor sepa generar código correcto para ellos.
-- **Paleta**: con libadwaita ≥ 1.6 se redefinen variables CSS y con versiones anteriores, colores con
-  nombre. La paleta grafito solo se carga en modo oscuro.
+- **GTK 4 + libadwaita + GtkSourceView 5**: a native GNOME application. GtkSourceView provides
+  highlighting, line numbers, indentation, undo and search maintained by GNOME, so there was no need
+  to write an editor from scratch.
+- **Custom suggestion list** (a `Gtk.Popover` that does not steal focus) instead of
+  `GtkSourceCompletion`. The required Tab behavior (complete directly when there is a single match,
+  indent when there is none) needs full keyboard control. The logic lives in
+  `completion.resolve_tab`, which is pure Python.
+- **JSON** for preferences, state, projects and custom templates. The data is small and stays
+  readable and editable by hand; SQLite added nothing. Damaged files are moved aside
+  (`*.corrupt-DATE`) instead of deleted.
+- **Bash only**: the shell selector only offers Bash and says why. Zsh and POSIX sh will be added
+  once the engine can generate correct code for them.
+- **Palette**: with libadwaita ≥ 1.6 CSS variables are redefined; with older versions, named colors.
+  The graphite palette is only loaded in dark mode.
 
-## Empaquetado (fase posterior)
+## Packaging (future)
 
-- **Flatpak** (recomendado): runtime `org.gnome.Platform` ≥ 46, que ya incluye GTK 4, libadwaita y
-  GtkSourceView 5. Haría falta un manifiesto con módulo Python, `finish-args` de acceso a la carpeta
-  personal (`--filesystem=home`) y la opción de ejecutar en el anfitrión con `flatpak-spawn --host`
-  para que los scripts vean el sistema real.
-- **Paquetes de distribución**: ya existen el lanzador `.desktop` y el icono SVG. Falta añadir un
-  archivo AppStream `metainfo.xml`.
+- **Flatpak** (recommended): `org.gnome.Platform` ≥ 46 runtime, which already includes GTK 4,
+  libadwaita and GtkSourceView 5. It needs a manifest with a Python module, `finish-args` for home
+  access (`--filesystem=home`) and running on the host with `flatpak-spawn --host` so scripts see
+  the real system.
+- **Distribution packages**: the `.desktop` launcher and SVG icon already exist. An AppStream
+  `metainfo.xml` file is still missing.
 
-## Limitaciones conocidas
+## Known limitations
 
-- **La interfaz no se ha ejecutado todavía.** Esta versión se escribió en un equipo Windows sin WSL ni
-  GTK. El núcleo tiene 138 pruebas que pasan (con Bash de Git for Windows). Las 5 pruebas de permisos
-  POSIX y enlaces simbólicos se omitieron allí. La interfaz se revisó con comprobación estática de
-  tipos contra los stubs de PyGObject (nombres de métodos, propiedades y firmas), pero nadie la ha
-  abierto todavía. Puede haber errores de presentación o de comportamiento que solo aparecen al
-  ejecutarla.
-- Editor de un solo documento (sin pestañas).
-- El análisis de riesgos antes de ejecutar es aproximado (expresiones regulares). No es un análisis
-  de seguridad.
-- La ejecución no ofrece entrada interactiva (stdin cerrado). Los scripts que usan `read` o `sudo`
-  sin terminal fallarán en esa orden.
-- La copia de seguridad en Studio se hace una vez por documento y sesión, no en cada guardado.
-- Sin perfiles de configuración. El modelo de preferencias es plano y versionado para poder añadirlos.
-- Icono provisional, creado para este proyecto.
+- **The GUI has not been run on Linux yet.** This version was written on a Windows machine without
+  GTK. The non-GUI core is covered by automated tests; the GUI was checked statically against the
+  PyGObject type stubs (method names, properties and signatures), but nobody has opened it yet.
+  There may be layout or behavior issues that only show up when running it.
+- Single-document editor (no tabs).
+- The risk analysis before running is approximate (regular expressions). It is not a security
+  analysis.
+- Execution has no interactive input (stdin is closed). Scripts that use `read` or `sudo` without a
+  terminal will fail at that command.
+- In Studio, the backup is made once per document and session, not on every save.
+- No configuration profiles yet. The preferences model is flat and versioned so they can be added.
+- Placeholder icon, created for this project.
+- The interface is in English only; translations are not supported yet.
+
+## License
+
+MIT. See [LICENSE](LICENSE).

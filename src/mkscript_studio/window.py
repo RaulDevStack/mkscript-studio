@@ -1,4 +1,4 @@
-"""Ventana principal: navegación lateral adaptable y las cinco secciones."""
+"""Main window: adaptive side navigation and the five sections."""
 
 from __future__ import annotations
 
@@ -17,11 +17,11 @@ from mkscript_studio.ui.projects_view import ProjectsView  # noqa: E402
 from mkscript_studio.ui.studio_view import StudioView  # noqa: E402
 
 SECTIONS = [
-    ("home", "Inicio", "go-home-symbolic"),
-    ("library", "Biblioteca", "view-grid-symbolic"),
+    ("home", "Home", "go-home-symbolic"),
+    ("library", "Library", "view-grid-symbolic"),
     ("studio", "Studio", "text-x-generic-symbolic"),
-    ("projects", "Proyectos", "folder-symbolic"),
-    ("preferences", "Preferencias", "emblem-system-symbolic"),
+    ("projects", "Projects", "folder-symbolic"),
+    ("preferences", "Preferences", "emblem-system-symbolic"),
 ]
 
 _SHORTCUTS_UI = """
@@ -39,17 +39,17 @@ _SHORTCUTS_UI = """
 """
 
 _SHORTCUT_GROUPS = [
-    ("Archivos", [("&lt;Ctrl&gt;n", "Nuevo script"), ("&lt;Ctrl&gt;o", "Abrir"), ("&lt;Ctrl&gt;s", "Guardar"),
-                  ("&lt;Ctrl&gt;&lt;Shift&gt;s", "Guardar como")]),
-    ("Edición", [("&lt;Ctrl&gt;z", "Deshacer"), ("&lt;Ctrl&gt;&lt;Shift&gt;z", "Rehacer"),
-                 ("&lt;Ctrl&gt;f", "Buscar"), ("&lt;Ctrl&gt;h", "Reemplazar"), ("&lt;Ctrl&gt;l", "Ir a la línea"),
-                 ("Tab", "Autocompletar o indentar"), ("&lt;Ctrl&gt;space", "Mostrar sugerencias"),
-                 ("Escape", "Cerrar sugerencias")]),
-    ("Comprobar y ejecutar", [("F7", "Comprobar sintaxis"), ("&lt;Shift&gt;F7", "ShellCheck"),
-                              ("F5", "Ejecutar (con confirmación)")]),
-    ("Navegación", [("&lt;Ctrl&gt;1", "Inicio"), ("&lt;Ctrl&gt;2", "Biblioteca"), ("&lt;Ctrl&gt;3", "Studio"),
-                    ("&lt;Ctrl&gt;4", "Proyectos"), ("&lt;Ctrl&gt;comma", "Preferencias"),
-                    ("&lt;Ctrl&gt;question", "Atajos de teclado")]),
+    ("Files", [("&lt;Ctrl&gt;n", "New script"), ("&lt;Ctrl&gt;o", "Open"), ("&lt;Ctrl&gt;s", "Save"),
+               ("&lt;Ctrl&gt;&lt;Shift&gt;s", "Save as")]),
+    ("Editing", [("&lt;Ctrl&gt;z", "Undo"), ("&lt;Ctrl&gt;&lt;Shift&gt;z", "Redo"),
+                 ("&lt;Ctrl&gt;f", "Find"), ("&lt;Ctrl&gt;h", "Replace"), ("&lt;Ctrl&gt;l", "Go to line"),
+                 ("Tab", "Autocomplete or indent"), ("&lt;Ctrl&gt;space", "Show suggestions"),
+                 ("Escape", "Close suggestions")]),
+    ("Check and run", [("F7", "Check syntax"), ("&lt;Shift&gt;F7", "ShellCheck"),
+                       ("F5", "Run (with confirmation)")]),
+    ("Navigation", [("&lt;Ctrl&gt;1", "Home"), ("&lt;Ctrl&gt;2", "Library"), ("&lt;Ctrl&gt;3", "Studio"),
+                    ("&lt;Ctrl&gt;4", "Projects"), ("&lt;Ctrl&gt;comma", "Preferences"),
+                    ("&lt;Ctrl&gt;question", "Keyboard shortcuts")]),
 ]
 
 
@@ -82,9 +82,9 @@ class MainWindow(Adw.ApplicationWindow):
         self._close_confirmed = False
         self._selecting = False
 
-        # Lo que usan las vistas al construirse debe existir antes que ellas.
+        # Whatever the views use while being built must exist before them.
         self.toast_overlay = Adw.ToastOverlay()
-        self.window_title = Adw.WindowTitle(title="Inicio")
+        self.window_title = Adw.WindowTitle(title="Home")
 
         self.studio = StudioView(self, services)
         self.library = LibraryView(self, services)
@@ -114,12 +114,12 @@ class MainWindow(Adw.ApplicationWindow):
         self.connect("close-request", self._on_close_request)
         self.show_section("home")
 
-    # -- construcción --------------------------------------------------------
+    # -- construction ------------------------------------------------------
 
     def _build_sidebar(self) -> Gtk.Widget:
         self.nav_list = Gtk.ListBox(selection_mode=Gtk.SelectionMode.SINGLE)
         self.nav_list.add_css_class("navigation-sidebar")
-        self.nav_list.update_property([Gtk.AccessibleProperty.LABEL], ["Secciones"])
+        self.nav_list.update_property([Gtk.AccessibleProperty.LABEL], ["Sections"])
         for _name, title, icon in SECTIONS:
             box = Gtk.Box(spacing=12, margin_top=8, margin_bottom=8, margin_start=6)
             box.append(Gtk.Image(icon_name=icon))
@@ -145,7 +145,7 @@ class MainWindow(Adw.ApplicationWindow):
     def _build_content(self) -> Gtk.Widget:
         header = Adw.HeaderBar()
         header.set_title_widget(self.window_title)
-        sidebar_button = Gtk.ToggleButton(icon_name="sidebar-show-symbolic", tooltip_text="Mostrar secciones")
+        sidebar_button = Gtk.ToggleButton(icon_name="sidebar-show-symbolic", tooltip_text="Show sections")
         flags = GObject.BindingFlags.SYNC_CREATE | GObject.BindingFlags.BIDIRECTIONAL
         self.split_view.bind_property("show-sidebar", sidebar_button, "active", flags)
         self.split_view.bind_property("collapsed", sidebar_button, "visible", GObject.BindingFlags.SYNC_CREATE)
@@ -153,15 +153,15 @@ class MainWindow(Adw.ApplicationWindow):
 
         menu = Gio.Menu()
         document_section = Gio.Menu()
-        document_section.append("Guardar como plantilla…", "win.save-template")
-        document_section.append("Ir a la línea…", "win.goto-line")
+        document_section.append("Save as template…", "win.save-template")
+        document_section.append("Go to line…", "win.goto-line")
         menu.append_section(None, document_section)
         app_section = Gio.Menu()
-        app_section.append("Atajos de teclado", "win.show-help-overlay")
-        app_section.append("Acerca de MKSCRIPT Studio", "app.about")
-        app_section.append("Salir", "app.quit")
+        app_section.append("Keyboard shortcuts", "win.show-help-overlay")
+        app_section.append("About MKSCRIPT Studio", "app.about")
+        app_section.append("Quit", "app.quit")
         menu.append_section(None, app_section)
-        menu_button = Gtk.MenuButton(icon_name="open-menu-symbolic", menu_model=menu, tooltip_text="Menú principal",
+        menu_button = Gtk.MenuButton(icon_name="open-menu-symbolic", menu_model=menu, tooltip_text="Main menu",
                                      primary=True)
         header.pack_end(menu_button)
 
@@ -193,7 +193,7 @@ class MainWindow(Adw.ApplicationWindow):
             action.connect("activate", lambda _a, _p, cb=callback: cb())
             self.add_action(action)
 
-    # -- navegación ------------------------------------------------------------
+    # -- navigation ------------------------------------------------------------
 
     def show_section(self, name: str) -> None:
         index = next(i for i, (n, _t, _i) in enumerate(SECTIONS) if n == name)
@@ -228,7 +228,7 @@ class MainWindow(Adw.ApplicationWindow):
         document = f"{name}{' •' if modified else ''} — " if name else ""
         self.set_title(f"{document}{APP_NAME}")
 
-    # -- utilidades para las vistas ------------------------------------------------
+    # -- helpers for the views ----------------------------------------------------
 
     def toast(self, message: str) -> None:
         toast = Adw.Toast(title=GLib.markup_escape_text(message), timeout=4)
@@ -239,7 +239,7 @@ class MainWindow(Adw.ApplicationWindow):
         self.library.refresh()
         self.home.refresh()
 
-    # -- cierre ------------------------------------------------------------------
+    # -- closing -----------------------------------------------------------------
 
     def _on_close_request(self, _window) -> bool:
         if self._close_confirmed or not self.studio.has_unsaved_changes():

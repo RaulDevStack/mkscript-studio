@@ -1,4 +1,4 @@
-"""Estado de la aplicación: archivos recientes y plantillas favoritas."""
+"""Application state: recent files and favorite templates."""
 
 from __future__ import annotations
 

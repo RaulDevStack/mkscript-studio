@@ -1,4 +1,4 @@
-"""Utilidades para insertar valores del usuario en código Bash de forma segura."""
+"""Helpers to safely insert user values into Bash code."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ _HOME_PREFIX_RE = re.compile(r"^(~|\$HOME|\$\{HOME\})(?=/|$)")
 
 
 def single_quote(value: str) -> str:
-    """Literal Bash entre comillas simples; nada en su interior se interpreta."""
+    """Single-quoted Bash literal; nothing inside it is interpreted."""
     return "'" + value.replace("'", "'\\''") + "'"
 
 
@@ -18,7 +18,7 @@ def _escape_double_quoted(value: str) -> str:
 
 
 def split_home(path: str) -> tuple[bool, str]:
-    """Separa el prefijo ``~``/``$HOME`` del resto de la ruta."""
+    """Split the ``~``/``$HOME`` prefix from the rest of the path."""
     match = _HOME_PREFIX_RE.match(path)
     if match:
         return True, path[match.end():]
@@ -26,10 +26,10 @@ def split_home(path: str) -> tuple[bool, str]:
 
 
 def path_literal(path: str) -> str:
-    """Convierte una ruta del formulario en un literal Bash.
+    """Turn a path from the form into a Bash literal.
 
-    ``~/x`` y ``$HOME/x`` se convierten en ``"${HOME}/x"`` para que se expandan
-    en la máquina que ejecuta el script; cualquier otro carácter especial se escapa.
+    ``~/x`` and ``$HOME/x`` become ``"${HOME}/x"`` so they expand on the machine
+    that runs the script; any other special character is escaped.
     """
     under_home, rest = split_home(path.strip())
     if under_home:
@@ -38,7 +38,7 @@ def path_literal(path: str) -> str:
 
 
 def path_key(path: str) -> str:
-    """Forma normalizada de una ruta del formulario, útil para compararlas."""
+    """Normalized form of a path from the form, useful for comparing paths."""
     under_home, rest = split_home(path.strip())
     normalized = posixpath.normpath(("~" if under_home else "") + rest) if (rest or under_home) else ""
     return normalized

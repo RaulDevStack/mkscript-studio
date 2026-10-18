@@ -1,4 +1,4 @@
-"""Lectura y guardado robusto de scripts."""
+"""Robust reading and saving of scripts."""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ _NAME_RE = re.compile(r"^[A-Za-z0-9._-]+$")
 
 
 class FileServiceError(OSError):
-    """Error con un mensaje apto para mostrarse al usuario."""
+    """Error whose message is suitable for showing to the user."""
 
 
 class InvalidNameError(ValueError):
@@ -26,7 +26,7 @@ class InvalidNameError(ValueError):
 
 class FileExistsConflict(FileServiceError):
     def __init__(self, path: Path) -> None:
-        super().__init__(f"Ya existe {path}")
+        super().__init__(f"{path} already exists")
         self.path = path
 
 
@@ -38,20 +38,20 @@ class SaveResult:
 
 
 def normalize_script_name(name: str) -> str:
-    """Valida el nombre (mismas reglas que mkscript) y añade ``.sh`` si falta."""
+    """Validate the name (same rules as mkscript) and add ``.sh`` if missing."""
     name = name.strip()
     if not name:
-        raise InvalidNameError("Escribe un nombre para el script")
+        raise InvalidNameError("Enter a name for the script")
     if name.startswith("-"):
-        raise InvalidNameError("El nombre no puede empezar por «-»")
+        raise InvalidNameError("The name cannot start with '-'")
     if not _NAME_RE.match(name):
-        raise InvalidNameError("Usa solo letras sin acentos, números, «.», «_» o «-»")
+        raise InvalidNameError("Use only unaccented letters, digits, '.', '_' or '-'")
     if not name.endswith(".sh"):
         name += ".sh"
     if name.strip(".") in ("", "sh") or name.startswith("."):
-        raise InvalidNameError("El nombre no puede empezar por «.» ni estar vacío")
+        raise InvalidNameError("The name cannot start with '.' or be empty")
     if len(name.encode()) > 255:
-        raise InvalidNameError("El nombre es demasiado largo")
+        raise InvalidNameError("The name is too long")
     return name
 
 
@@ -66,7 +66,7 @@ def _current_umask() -> int:
 
 
 def _with_exec_bits(mode: int) -> int:
-    """Añade x donde ya hay r (u, g, o); nunca quita permisos."""
+    """Add x wherever r is already set (u, g, o); never removes permissions."""
     if mode & stat.S_IRUSR:
         mode |= stat.S_IXUSR
     if mode & stat.S_IRGRP:
@@ -84,35 +84,35 @@ class FileService:
         try:
             directory.mkdir(parents=True, exist_ok=True)
         except FileExistsError:
-            raise FileServiceError(f"{directory} existe pero no es una carpeta") from None
+            raise FileServiceError(f"{directory} exists but is not a folder") from None
         except PermissionError:
-            raise FileServiceError(f"No tienes permiso para crear la carpeta {directory}") from None
+            raise FileServiceError(f"You do not have permission to create the folder {directory}") from None
         except OSError as exc:
-            raise FileServiceError(f"No se pudo crear la carpeta {directory}: {exc.strerror or exc}") from None
+            raise FileServiceError(f"Could not create the folder {directory}: {exc.strerror or exc}") from None
         if not directory.is_dir():
-            raise FileServiceError(f"{directory} existe pero no es una carpeta")
+            raise FileServiceError(f"{directory} exists but is not a folder")
         return directory
 
     def read(self, path: Path) -> str:
         try:
             size = path.stat().st_size
             if size > MAX_FILE_SIZE:
-                raise FileServiceError(f"{path.name} ocupa {size // 1024} KiB; el límite es {MAX_FILE_SIZE // 1024 // 1024} MiB")
+                raise FileServiceError(f"{path.name} is {size // 1024} KiB; the limit is {MAX_FILE_SIZE // 1024 // 1024} MiB")
             data = path.read_bytes()
         except FileServiceError:
             raise
         except FileNotFoundError:
-            raise FileServiceError(f"No existe {path}") from None
+            raise FileServiceError(f"{path} does not exist") from None
         except IsADirectoryError:
-            raise FileServiceError(f"{path} es una carpeta") from None
+            raise FileServiceError(f"{path} is a folder") from None
         except PermissionError:
-            raise FileServiceError(f"No tienes permiso para leer {path}") from None
+            raise FileServiceError(f"You do not have permission to read {path}") from None
         except OSError as exc:
-            raise FileServiceError(f"No se pudo leer {path}: {exc.strerror or exc}") from None
+            raise FileServiceError(f"Could not read {path}: {exc.strerror or exc}") from None
         try:
             return data.decode("utf-8")
         except UnicodeDecodeError as exc:
-            raise FileServiceError(f"{path.name} no está codificado en UTF-8 (byte {exc.start})") from None
+            raise FileServiceError(f"{path.name} is not UTF-8 encoded (byte {exc.start})") from None
 
     def save(
         self,
@@ -123,17 +123,17 @@ class FileService:
         backup: BackupService | None = None,
         make_executable: bool = False,
     ) -> SaveResult:
-        """Guarda ``content`` de forma atómica.
+        """Save ``content`` atomically.
 
-        Si el archivo existe y ``overwrite`` es falso se lanza ``FileExistsConflict``
-        para que la interfaz pida confirmación. Con ``backup`` se crea una copia
-        antes de reemplazarlo; si la copia falla, el archivo original no se toca.
+        If the file exists and ``overwrite`` is false, ``FileExistsConflict`` is
+        raised so the UI can ask for confirmation. With ``backup`` a copy is made
+        before replacing it; if the copy fails, the original file is left untouched.
         """
         if path.is_symlink():
-            # Se actualiza el destino del enlace, no el enlace en sí.
+            # Update the link target, not the link itself.
             path = Path(os.path.realpath(path))
         if path.is_dir():
-            raise FileServiceError(f"{path} es una carpeta")
+            raise FileServiceError(f"{path} is a folder")
 
         exists = path.exists()
         if exists and not overwrite:
@@ -162,9 +162,9 @@ class FileService:
         try:
             fd, tmp_name = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp")
         except PermissionError:
-            raise FileServiceError(f"No tienes permiso para escribir en {path.parent}") from None
+            raise FileServiceError(f"You do not have permission to write to {path.parent}") from None
         except OSError as exc:
-            raise FileServiceError(f"No se pudo escribir en {path.parent}: {exc.strerror or exc}") from None
+            raise FileServiceError(f"Could not write to {path.parent}: {exc.strerror or exc}") from None
         try:
             with os.fdopen(fd, "wb") as handle:
                 handle.write(data)
@@ -178,5 +178,5 @@ class FileService:
             except FileNotFoundError:
                 pass
             if isinstance(exc, PermissionError):
-                raise FileServiceError(f"No tienes permiso para guardar {path}") from None
-            raise FileServiceError(f"No se pudo guardar {path}: {exc.strerror or exc}") from None
+                raise FileServiceError(f"You do not have permission to save {path}") from None
+            raise FileServiceError(f"Could not save {path}: {exc.strerror or exc}") from None

@@ -1,4 +1,4 @@
-/* Paleta grafito para el modo oscuro (libadwaita < 1.6). */
+/* Graphite palette for dark mode (libadwaita < 1.6). */
 @define-color accent_color #2dd4bf;
 @define-color accent_bg_color #0d8075;
 @define-color accent_fg_color #ffffff;

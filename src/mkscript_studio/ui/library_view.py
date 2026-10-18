@@ -1,4 +1,4 @@
-"""Biblioteca: plantillas por categorías, búsqueda, favoritos, formulario y vista previa."""
+"""Library: templates by category, search, favorites, form and preview."""
 
 from __future__ import annotations
 
@@ -34,7 +34,7 @@ if TYPE_CHECKING:
     from mkscript_studio.context import AppServices
     from mkscript_studio.window import MainWindow
 
-ALL_CATEGORIES = "Todas las categorías"
+ALL_CATEGORIES = "All categories"
 
 
 class LibraryView(Gtk.Box):
@@ -61,22 +61,22 @@ class LibraryView(Gtk.Box):
         Adw.StyleManager.get_default().connect("notify::dark", lambda m, _p: self.preview.set_dark(m.get_dark()))
         self.refresh()
 
-    # -- construcción --------------------------------------------------------
+    # -- construction ------------------------------------------------------
 
     def _build_list_column(self) -> Gtk.Widget:
         column = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8, width_request=280,
                          margin_start=12, margin_end=12, margin_top=12, margin_bottom=12)
-        self.search_entry = Gtk.SearchEntry(placeholder_text="Buscar plantillas")
+        self.search_entry = Gtk.SearchEntry(placeholder_text="Search templates")
         self.search_entry.connect("search-changed", lambda *_: self.refresh())
         column.append(self.search_entry)
 
         filters = Gtk.Box(spacing=6)
         self.category_dropdown = Gtk.DropDown.new_from_strings([ALL_CATEGORIES])
         self.category_dropdown.set_hexpand(True)
-        self.category_dropdown.update_property([Gtk.AccessibleProperty.LABEL], ["Categoría"])
+        self.category_dropdown.update_property([Gtk.AccessibleProperty.LABEL], ["Category"])
         self.category_dropdown.connect("notify::selected", lambda *_: self.refresh())
         filters.append(self.category_dropdown)
-        self.favorites_toggle = Gtk.ToggleButton(icon_name="starred-symbolic", tooltip_text="Solo favoritas")
+        self.favorites_toggle = Gtk.ToggleButton(icon_name="starred-symbolic", tooltip_text="Favorites only")
         self.favorites_toggle.connect("toggled", lambda *_: self.refresh())
         filters.append(self.favorites_toggle)
         column.append(filters)
@@ -102,12 +102,12 @@ class LibraryView(Gtk.Box):
         titles.append(self.category_label)
         header.append(titles)
         self.favorite_button = Gtk.ToggleButton(icon_name="non-starred-symbolic", valign=Gtk.Align.START,
-                                                tooltip_text="Añadir a favoritas")
+                                                tooltip_text="Add to favorites")
         self.favorite_button.add_css_class("flat")
         self.favorite_button.connect("toggled", self._on_favorite_toggled)
         header.append(self.favorite_button)
         self.delete_button = Gtk.Button(icon_name="user-trash-symbolic", valign=Gtk.Align.START,
-                                        tooltip_text="Eliminar plantilla personalizada")
+                                        tooltip_text="Delete custom template")
         self.delete_button.add_css_class("flat")
         self.delete_button.connect("clicked", lambda *_: self._delete_custom())
         header.append(self.delete_button)
@@ -119,13 +119,13 @@ class LibraryView(Gtk.Box):
         self.detail.append(self.risk_box)
 
         script_group = Adw.PreferencesGroup(title="Script")
-        self.name_row = Adw.EntryRow(title="Nombre del archivo")
+        self.name_row = Adw.EntryRow(title="File name")
         self.name_row.connect("changed", lambda *_: self._schedule_preview())
         script_group.add(self.name_row)
-        self.description_row = Adw.EntryRow(title="Descripción (opcional)")
+        self.description_row = Adw.EntryRow(title="Description (optional)")
         self.description_row.connect("changed", lambda *_: self._schedule_preview())
         script_group.add(self.description_row)
-        self.output_row = Adw.ActionRow(title="Se guardará en")
+        self.output_row = Adw.ActionRow(title="Will be saved to")
         self.output_row.set_subtitle_selectable(True)
         script_group.add(self.output_row)
         self.detail.append(script_group)
@@ -138,15 +138,15 @@ class LibraryView(Gtk.Box):
         self.detail.append(self.error_label)
 
         actions = Gtk.Box(spacing=8)
-        self.open_button = text_button("Abrir en Studio", self.open_in_studio, icon="document-edit-symbolic",
+        self.open_button = text_button("Open in Studio", self.open_in_studio, icon="document-edit-symbolic",
                                        css=("pill",))
-        self.save_button = text_button("Generar y guardar", self.generate_and_save, icon="document-save-symbolic",
+        self.save_button = text_button("Generate and save", self.generate_and_save, icon="document-save-symbolic",
                                        css=("pill", "suggested-action"))
         actions.append(self.open_button)
         actions.append(self.save_button)
         self.detail.append(actions)
 
-        self.detail.append(label("Vista previa", css=("heading",)))
+        self.detail.append(label("Preview", css=("heading",)))
         self.preview = CodeEditor(dark=Adw.StyleManager.get_default().get_dark(), read_only=True)
         self.preview.apply_preferences(self.services.prefs.preferences)
         self.preview.set_size_request(-1, 420)
@@ -158,14 +158,14 @@ class LibraryView(Gtk.Box):
         scroller = Gtk.ScrolledWindow(hexpand=True, vexpand=True, hscrollbar_policy=Gtk.PolicyType.NEVER)
         scroller.set_child(clamp)
 
-        self.empty_page = Adw.StatusPage(icon_name="edit-find-symbolic", title="Sin resultados",
-                                         description="Ninguna plantilla coincide con la búsqueda o los filtros.")
+        self.empty_page = Adw.StatusPage(icon_name="edit-find-symbolic", title="No results",
+                                         description="No template matches the search or filters.")
         self.detail_stack = Gtk.Stack()
         self.detail_stack.add_named(scroller, "detail")
         self.detail_stack.add_named(self.empty_page, "empty")
         return self.detail_stack
 
-    # -- lista -------------------------------------------------------------
+    # -- list --------------------------------------------------------------
 
     def refresh(self) -> None:
         if self._loading:
@@ -235,7 +235,7 @@ class LibraryView(Gtk.Box):
                 self.template_list.select_row(self.template_list.get_row_at_index(index))
                 break
 
-    # -- detalle -------------------------------------------------------------
+    # -- details -------------------------------------------------------------
 
     def _show_template(self, template: Template) -> None:
         if self.template is not None and self.template.id == template.id:
@@ -260,7 +260,7 @@ class LibraryView(Gtk.Box):
 
     def _update_favorite_icon(self, favorite: bool) -> None:
         self.favorite_button.set_icon_name("starred-symbolic" if favorite else "non-starred-symbolic")
-        self.favorite_button.set_tooltip_text("Quitar de favoritas" if favorite else "Añadir a favoritas")
+        self.favorite_button.set_tooltip_text("Remove from favorites" if favorite else "Add to favorites")
 
     def _on_favorite_toggled(self, button: Gtk.ToggleButton) -> None:
         if self._loading or self.template is None:
@@ -280,18 +280,18 @@ class LibraryView(Gtk.Box):
             try:
                 self.services.templates.delete_custom(template.id)
             except (KeyError, OSError) as exc:
-                show_error(self, "No se pudo eliminar la plantilla", str(exc))
+                show_error(self, "Could not delete the template", str(exc))
                 return
             self.services.state.set_favorite(template.id, False)
             self.template = None
             self.window.templates_changed()
-            self.window.toast(f"Plantilla «{template.name}» eliminada")
+            self.window.toast(f"Template \"{template.name}\" deleted")
 
-        ask(self, "¿Eliminar la plantilla?",
-            f"Se eliminará «{template.name}» de la biblioteca. Los scripts ya generados no se modifican.",
-            [("cancel", "Cancelar", ""), ("delete", "Eliminar", "destructive")], on_response)
+        ask(self, "Delete the template?",
+            f"\"{template.name}\" will be removed from the library. Scripts already generated are not changed.",
+            [("cancel", "Cancel", ""), ("delete", "Delete", "destructive")], on_response)
 
-    # -- generación ------------------------------------------------------------
+    # -- generation ------------------------------------------------------------
 
     def _schedule_preview(self) -> None:
         if self._loading:
@@ -301,9 +301,9 @@ class LibraryView(Gtk.Box):
         self._preview_source = GLib.timeout_add(120, self._update_preview)
 
     def _current(self) -> tuple[str | None, str | None, str | None]:
-        """Devuelve ``(código, nombre normalizado, error)``."""
+        """Return ``(code, normalized name, error)``."""
         if self.template is None:
-            return None, None, "Elige una plantilla"
+            return None, None, "Choose a template"
         try:
             name = normalize_script_name(self.name_row.get_text())
         except InvalidNameError as exc:
@@ -314,7 +314,7 @@ class LibraryView(Gtk.Box):
         _, errors = self.template.validate(values)
         self.form.show_errors(errors)
         if errors:
-            return None, name, "Corrige los parámetros marcados: " + "; ".join(errors.values())
+            return None, name, "Fix the highlighted parameters: " + "; ".join(errors.values())
         config = GenerationConfig.from_preferences(self.services.prefs.preferences, name, self.description_row.get_text())
         try:
             return generate_script(self.template, config, values), name, None
@@ -337,7 +337,7 @@ class LibraryView(Gtk.Box):
     def open_in_studio(self) -> None:
         code, name, error = self._current()
         if code is None or name is None or self.template is None:
-            show_error(self, "No se puede generar", error or "")
+            show_error(self, "Cannot generate", error or "")
             return
         self.window.studio.load_generated(self.template, self.form.values(), name, self.description_row.get_text())
         self.window.show_section("studio")
@@ -345,13 +345,13 @@ class LibraryView(Gtk.Box):
     def generate_and_save(self) -> None:
         code, name, error = self._current()
         if code is None or name is None:
-            show_error(self, "No se puede generar", error or "")
+            show_error(self, "Cannot generate", error or "")
             return
         prefs = self.services.prefs.preferences
         try:
             directory = self.services.files.ensure_directory(prefs.output_path())
         except FileServiceError as exc:
-            show_error(self, "No se pudo preparar la carpeta de salida", str(exc))
+            show_error(self, "Could not prepare the output folder", str(exc))
             return
         self._save(directory / name, code, overwrite=False)
 
@@ -365,22 +365,22 @@ class LibraryView(Gtk.Box):
             )
         except FileExistsConflict:
             if prefs.backup_before_overwrite:
-                body = (f"Ya existe {tilde_path(path)}. Antes de sobrescribirlo se guardará una copia "
-                        "de seguridad con la fecha y hora.")
+                body = (f"{tilde_path(path)} already exists. A timestamped backup will be saved "
+                        "before overwriting it.")
             else:
-                body = (f"Ya existe {tilde_path(path)}. Las copias de seguridad están desactivadas en "
-                        "Preferencias: su contenido actual se perderá.")
-            ask(self, f"¿Sobrescribir {path.name}?", body,
-                [("cancel", "Cancelar", ""), ("overwrite", "Sobrescribir", "destructive")],
+                body = (f"{tilde_path(path)} already exists. Backups are disabled in "
+                        "Preferences: its current content will be lost.")
+            ask(self, f"Overwrite {path.name}?", body,
+                [("cancel", "Cancel", ""), ("overwrite", "Overwrite", "destructive")],
                 lambda r: r == "overwrite" and self._save(path, code, overwrite=True))
             return
         except FileServiceError as exc:
-            show_error(self, "No se pudo guardar", str(exc))
+            show_error(self, "Could not save", str(exc))
             return
         self.services.state.add_recent(result.path)
-        message = f"Script guardado en {tilde_path(result.path)}"
+        message = f"Script saved to {tilde_path(result.path)}"
         if result.backup_path:
-            message += f" · copia: {result.backup_path.name}"
+            message += f" · backup: {result.backup_path.name}"
         self.window.toast(message)
         if prefs.open_after_generate:
             self.window.studio.open_path(result.path)
