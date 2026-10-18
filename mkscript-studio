@@ -24,18 +24,51 @@ deps_command() {
     fi
 }
 
+# Devuelve 0 si todo está listo, 1 si falta algo y 2 si hay versiones demasiado antiguas
+# (en ese caso deja el detalle en VERSION_PROBLEM).
+VERSION_PROBLEM=""
 check_deps() {
     command -v "${PYTHON}" >/dev/null 2>&1 || return 1
-    "${PYTHON}" - <<'EOF' 2>/dev/null
+    local status=0
+    VERSION_PROBLEM="$("${PYTHON}" - 2>/dev/null <<'EOF'
 import sys
 if sys.version_info < (3, 11):
+    print(f"Python {sys.version_info.major}.{sys.version_info.minor} (se necesita 3.11 o posterior)")
+    raise SystemExit(2)
+try:
+    import gi
+    gi.require_version("Gtk", "4.0")
+    gi.require_version("Adw", "1")
+    gi.require_version("GtkSource", "5")
+    from gi.repository import Adw, Gtk, GtkSource  # noqa: F401
+except (ImportError, ValueError):
     raise SystemExit(1)
-import gi
-gi.require_version("Gtk", "4.0")
-gi.require_version("Adw", "1")
-gi.require_version("GtkSource", "5")
-from gi.repository import Adw, Gtk, GtkSource  # noqa: F401
+problems = []
+if (Gtk.get_major_version(), Gtk.get_minor_version()) < (4, 10):
+    problems.append(f"GTK {Gtk.get_major_version()}.{Gtk.get_minor_version()} (se necesita 4.10 o posterior)")
+if Adw.get_minor_version() < 4:
+    problems.append(f"libadwaita 1.{Adw.get_minor_version()} (se necesita 1.4 o posterior)")
+if problems:
+    print("; ".join(problems))
+    raise SystemExit(2)
 EOF
+)" || status=$?
+    return "${status}"
+}
+
+too_old() {
+    printf '[X] Tu sistema tiene versiones demasiado antiguas: %s\n' "${VERSION_PROBLEM}" >&2
+    printf '    MKSCRIPT Studio necesita una distribución reciente (Debian 13, Ubuntu 24.04, Fedora 39,\n' >&2
+    printf '    Kali o Arch actualizados). Actualizar paquetes no basta si la distribución es antigua.\n' >&2
+    exit 1
+}
+
+# Comprueba las dependencias; con versiones antiguas termina con un mensaje claro.
+deps_status() {
+    local status=0
+    check_deps || status=$?
+    [[ "${status}" -ne 2 ]] || too_old
+    return "${status}"
 }
 
 install_deps() {
@@ -52,16 +85,18 @@ install_deps() {
 case "${1:-}" in
     --install-deps)
         install_deps
-        check_deps && info "Dependencias listas. Ejecuta ./mkscript-studio" || die "Siguen faltando dependencias"
+        deps_status || die "Siguen faltando dependencias"
+        info "Dependencias listas. Ejecuta ./mkscript-studio"
         exit 0
         ;;
     --check)
-        if check_deps; then info "Todas las dependencias están instaladas"; exit 0; fi
-        die "Faltan dependencias. Ejecuta: ./mkscript-studio --install-deps"
+        deps_status || die "Faltan dependencias. Ejecuta: ./mkscript-studio --install-deps"
+        info "Todas las dependencias están instaladas"
+        exit 0
         ;;
 esac
 
-if ! check_deps; then
+if ! deps_status; then
     printf '[X] Faltan dependencias del sistema (Python 3.11+, GTK 4, libadwaita o GtkSourceView 5).\n' >&2
     printf '    Instálalas con:  ./mkscript-studio --install-deps\n' >&2
     if cmd="$(deps_command)" && [[ -n "${cmd}" ]]; then

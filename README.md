@@ -67,67 +67,111 @@ explícita en `if` o con `|| true` comentado. Generar una plantilla nunca ejecut
   puede detener (SIGTERM al grupo y SIGKILL tras 3 s). **No es un sandbox**: el script se ejecuta con
   los permisos de tu usuario.
 
-## Requisitos
+## Instalación
 
-- Linux con Python ≥ 3.11
-- GTK ≥ 4.10, libadwaita ≥ 1.4, GtkSourceView 5 y PyGObject
-- `bash` (comprobación de sintaxis y ejecución)
-- Opcional: `shellcheck`
+MKSCRIPT Studio se ejecuta directamente desde la carpeta descargada: no hay que compilar nada ni usar
+pip. Solo hacen falta unos paquetes del sistema, que el propio lanzador instala.
 
-| Distribución | Dependencias del sistema |
-| --- | --- |
-| Debian 13 / Ubuntu 24.04 o posterior | `sudo apt install python3-gi gir1.2-gtk-4.0 gir1.2-adw-1 gir1.2-gtksource-5 shellcheck` |
-| Fedora 39 o posterior | `sudo dnf install python3-gobject gtk4 libadwaita gtksourceview5 ShellCheck` |
-| Arch Linux | `sudo pacman -S python-gobject gtk4 libadwaita gtksourceview5 shellcheck` |
+### Requisitos
 
-Estas órdenes instalan paquetes del sistema; revísalas antes de ejecutarlas.
+- Una distribución Linux reciente con escritorio: Kali, Debian 13, Ubuntu 24.04, Fedora 39, Arch o
+  posteriores.
+- Python 3.11 o posterior, GTK 4.10 o posterior, libadwaita 1.4 o posterior, GtkSourceView 5 y
+  PyGObject. El paso 2 los instala.
+- `git` para descargar y actualizar el programa.
+- Opcional: `shellcheck`, para el análisis estático adicional. El paso 2 también lo instala.
 
-## Instalación y ejecución
+Debian 12 y Ubuntu 22.04 traen un libadwaita demasiado antiguo y no son compatibles.
 
-### Uso directo desde el repositorio (recomendado)
-
-No hace falta pip ni entorno virtual: el script `./mkscript-studio` arranca la aplicación desde el
-código del repositorio.
-
-Clonando solo la rama `release` y sin historial, `git pull` descarga únicamente lo imprescindible.
-
-Primera vez:
+### 1. Descargar
 
 ```bash
-git clone --branch release --single-branch --depth 1 https://github.com/RaulDevStack/mkscript-studio.git
+git clone --depth 1 https://github.com/RaulDevStack/mkscript-studio.git
 ```
 
 ```bash
 cd mkscript-studio
 ```
 
+`--depth 1` descarga solo la última versión, sin historial. Si no tienes git, instálalo antes con
+`sudo apt install git` (o `dnf` / `pacman`).
+
+### 2. Instalar las dependencias (solo la primera vez)
+
 ```bash
 ./mkscript-studio --install-deps
 ```
 
-`--install-deps` muestra la orden que va a ejecutar (apt, dnf o pacman) y pide la contraseña de sudo.
-Solo hace falta una vez.
+El lanzador detecta tu gestor de paquetes, muestra la orden que va a ejecutar y pide tu contraseña
+de sudo. Si prefieres instalarlas a mano, estas son las órdenes equivalentes:
 
-Arrancar (también se le puede pasar un archivo: `./mkscript-studio ~/Scripts/backup.sh`):
+| Distribución | Orden |
+| --- | --- |
+| Kali, Debian, Ubuntu | `sudo apt install python3 python3-gi gir1.2-gtk-4.0 gir1.2-adw-1 gir1.2-gtksource-5 shellcheck` |
+| Fedora | `sudo dnf install python3 python3-gobject gtk4 libadwaita gtksourceview5 ShellCheck` |
+| Arch Linux | `sudo pacman -S python python-gobject gtk4 libadwaita gtksourceview5 shellcheck` |
+
+Para comprobar que todo está listo sin abrir la aplicación:
+
+```bash
+./mkscript-studio --check
+```
+
+### 3. Abrir el programa
 
 ```bash
 ./mkscript-studio
 ```
 
-Actualizar a la última versión:
+También puedes abrir un script directamente:
 
 ```bash
-git pull && ./mkscript-studio
+./mkscript-studio ~/Scripts/backup.sh
 ```
 
-Opcional: añadirlo al menú del escritorio. El lanzador apunta a este repositorio, así que tras cada
-`git pull` el menú abre la versión nueva:
+Ejecútalo con tu usuario normal, no como `root`: la configuración se guarda en tu carpeta personal y
+las aplicaciones gráficas lanzadas como root suelen fallar al abrir la ventana.
+
+### 4. Añadirlo al menú de aplicaciones (opcional)
 
 ```bash
 bash packaging/install-desktop.sh
 ```
 
-`./mkscript-studio --check` comprueba las dependencias sin abrir la aplicación.
+Crea el acceso directo «MKSCRIPT Studio» en el menú del escritorio sin necesidad de sudo. El acceso
+apunta a esta carpeta: si la mueves de sitio, vuelve a ejecutar la orden.
+
+### Actualizar
+
+Dentro de la carpeta del programa:
+
+```bash
+git pull
+```
+
+La próxima vez que lo abras (desde el terminal o desde el menú) usará la versión nueva.
+
+### Desinstalar
+
+Borra la carpeta del programa y, si lo añadiste al menú, el acceso directo y el icono:
+
+```bash
+rm -f ~/.local/share/applications/io.github.rauldevstack.MkscriptStudio.desktop ~/.local/share/icons/hicolor/scalable/apps/io.github.rauldevstack.MkscriptStudio.svg
+```
+
+Tus preferencias están en `~/.config/mkscript-studio`, y los recientes, proyectos y plantillas propias
+en `~/.local/share/mkscript-studio`. Bórralos solo si no quieres conservarlos. Los scripts que hayas
+guardado (por defecto en `~/Scripts`) no se tocan.
+
+### Problemas frecuentes
+
+| Mensaje | Solución |
+| --- | --- |
+| `Faltan dependencias del sistema` | Ejecuta `./mkscript-studio --install-deps`. |
+| `versiones demasiado antiguas` | Tu distribución es anterior a las compatibles; hace falta una más reciente. |
+| `Permission denied` al ejecutar `./mkscript-studio` | Usa `bash mkscript-studio` o da permiso con `chmod +x mkscript-studio`. |
+| `Could not resolve host: github.com` | El equipo no tiene conexión a internet o falla el DNS. |
+| `fatal: could not create work tree dir` | La carpeta actual ya no existe; ejecuta `cd ~` y repite el `git clone`. |
 
 ## Arquitectura
 
@@ -147,8 +191,7 @@ src/mkscript_studio/
 └── resources/                 # CSS (paleta grafito/turquesa), esquemas del editor, icono
 ```
 
-Todo lo que está fuera de `app.py`, `window.py`, `editor/code_editor.py` y `ui/` funciona sin GTK y
-tiene pruebas.
+Todo lo que está fuera de `app.py`, `window.py`, `editor/code_editor.py` y `ui/` funciona sin GTK.
 
 ### Decisiones técnicas
 
@@ -158,7 +201,7 @@ tiene pruebas.
 - **Lista de sugerencias propia** (un `Gtk.Popover` que no roba el foco) en lugar de
   `GtkSourceCompletion`. El comportamiento de Tab que se pedía (completar directamente si hay una sola
   coincidencia, indentar si no hay ninguna) necesita control total del teclado. Además, la lógica vive
-  en `completion.resolve_tab`, que es Python puro y tiene pruebas.
+  en `completion.resolve_tab`, que es Python puro.
 - **JSON** para preferencias, estado, proyectos y plantillas propias. Son pocos datos y así se pueden
   leer y editar a mano; SQLite no aportaba nada. Los archivos dañados se apartan
   (`*.corrupt-FECHA`) en lugar de borrarse.
@@ -173,8 +216,8 @@ tiene pruebas.
   GtkSourceView 5. Haría falta un manifiesto con módulo Python, `finish-args` de acceso a la carpeta
   personal (`--filesystem=home`) y la opción de ejecutar en el anfitrión con `flatpak-spawn --host`
   para que los scripts vean el sistema real.
-- **Paquetes de distribución**: ya existe `pyproject.toml`, el lanzador `.desktop` y el icono SVG.
-  Falta añadir un archivo AppStream `metainfo.xml`.
+- **Paquetes de distribución**: ya existen el lanzador `.desktop` y el icono SVG. Falta añadir un
+  archivo AppStream `metainfo.xml`.
 
 ## Limitaciones conocidas
 
