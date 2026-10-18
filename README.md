@@ -89,8 +89,7 @@ Estas órdenes instalan paquetes del sistema; revísalas antes de ejecutarlas.
 No hace falta pip ni entorno virtual: el script `./mkscript-studio` arranca la aplicación desde el
 código del repositorio.
 
-La rama `release` contiene solo lo necesario para ejecutar el programa (sin pruebas ni archivos de
-desarrollo). Clonando solo esa rama y sin historial, `git pull` descarga únicamente lo imprescindible.
+Clonando solo la rama `release` y sin historial, `git pull` descarga únicamente lo imprescindible.
 
 Primera vez:
 
@@ -129,48 +128,6 @@ bash packaging/install-desktop.sh
 ```
 
 `./mkscript-studio --check` comprueba las dependencias sin abrir la aplicación.
-
-### Entorno de desarrollo (para ejecutar las pruebas)
-
-El desarrollo se hace en la rama `main`, que incluye las pruebas y la configuración del proyecto:
-
-```bash
-git clone https://github.com/RaulDevStack/mkscript-studio.git
-```
-
-`--system-site-packages` es necesario para usar el PyGObject de la distribución:
-
-```bash
-python3 -m venv --system-site-packages .venv
-```
-
-```bash
-.venv/bin/pip install -e ".[dev]"
-```
-
-### Publicar una versión
-
-Tras subir cambios a `main`, regenera la rama `release` y súbela. El script copia solo los archivos
-de su lista blanca (`mkscript-studio`, `src`, `packaging`, `LICENSE`, `README.md`, `.gitattributes`)
-y no toca tu directorio de trabajo:
-
-```bash
-tools/publish-release.sh --push
-```
-
-## Pruebas
-
-```bash
-.venv/bin/python -m pytest
-```
-
-Las pruebas cubren el generador (las 7 plantillas × estilos de comentario × modo estricto × colores
-× indentación pasan `bash -n`, y algunas se ejecutan de verdad), preferencias (persistencia, archivos
-corruptos, valores inválidos, rutas), guardado (confirmación, copias, atomicidad, permisos, enlaces,
-UTF-8, carpetas sin permisos), copias de seguridad, validación (errores con línea, Bash ausente,
-cancelación, que no se ejecuta nada, que se ignora `BASH_ENV`), autocompletado, ejecución, proyectos
-y estado. Todas usan directorios temporales y una carpeta personal falsa. La interfaz GTK no tiene
-pruebas automáticas.
 
 ## Arquitectura
 
