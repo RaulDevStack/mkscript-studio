@@ -1,0 +1,4 @@
+/* Acento turquesa (libadwaita < 1.6: colores con nombre). */
+@define-color accent_color #0f766e;
+@define-color accent_bg_color #0f766e;
+@define-color accent_fg_color #ffffff;

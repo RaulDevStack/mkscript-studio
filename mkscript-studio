@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+# Lanza MKSCRIPT Studio directamente desde el repositorio, sin pip ni entorno virtual.
+# Uso:
+#   ./mkscript-studio [archivo.sh]   Abre la aplicación (y opcionalmente un script)
+#   ./mkscript-studio --install-deps Instala las dependencias del sistema (pide sudo)
+#   ./mkscript-studio --check        Solo comprueba las dependencias
+
+set -Eeuo pipefail
+
+ROOT="$(cd -- "$(dirname -- "$(readlink -f -- "${BASH_SOURCE[0]}")")" && pwd)"
+readonly ROOT
+readonly PYTHON="${PYTHON:-python3}"
+
+info() { printf '[*] %s\n' "$*" >&2; }
+die()  { printf '[X] %s\n' "$*" >&2; exit 1; }
+
+deps_command() {
+    if command -v apt-get >/dev/null 2>&1; then
+        echo "sudo apt-get install -y python3 python3-gi gir1.2-gtk-4.0 gir1.2-adw-1 gir1.2-gtksource-5 shellcheck"
+    elif command -v dnf >/dev/null 2>&1; then
+        echo "sudo dnf install -y python3 python3-gobject gtk4 libadwaita gtksourceview5 ShellCheck"
+    elif command -v pacman >/dev/null 2>&1; then
+        echo "sudo pacman -S --needed python python-gobject gtk4 libadwaita gtksourceview5 shellcheck"
+    fi
+}
+
+check_deps() {
+    command -v "${PYTHON}" >/dev/null 2>&1 || return 1
+    "${PYTHON}" - <<'EOF' 2>/dev/null
+import sys
+if sys.version_info < (3, 11):
+    raise SystemExit(1)
+import gi
+gi.require_version("Gtk", "4.0")
+gi.require_version("Adw", "1")
+gi.require_version("GtkSource", "5")
+from gi.repository import Adw, Gtk, GtkSource  # noqa: F401
+EOF
+}
+
+install_deps() {
+    local cmd
+    cmd="$(deps_command)"
+    [[ -n "${cmd}" ]] || die "Distribución no reconocida; instala a mano: Python 3.11+, PyGObject, GTK 4, libadwaita y GtkSourceView 5"
+    info "Se ejecutará: ${cmd}"
+    if command -v apt-get >/dev/null 2>&1; then
+        sudo apt-get update
+    fi
+    ${cmd}
+}
+
+case "${1:-}" in
+    --install-deps)
+        install_deps
+        check_deps && info "Dependencias listas. Ejecuta ./mkscript-studio" || die "Siguen faltando dependencias"
+        exit 0
+        ;;
+    --check)
+        if check_deps; then info "Todas las dependencias están instaladas"; exit 0; fi
+        die "Faltan dependencias. Ejecuta: ./mkscript-studio --install-deps"
+        ;;
+esac
+
+if ! check_deps; then
+    printf '[X] Faltan dependencias del sistema (Python 3.11+, GTK 4, libadwaita o GtkSourceView 5).\n' >&2
+    printf '    Instálalas con:  ./mkscript-studio --install-deps\n' >&2
+    if cmd="$(deps_command)" && [[ -n "${cmd}" ]]; then
+        printf '    (equivale a:     %s)\n' "${cmd}" >&2
+    fi
+    exit 1
+fi
+
+export PYTHONPATH="${ROOT}/src${PYTHONPATH:+:${PYTHONPATH}}"
+exec "${PYTHON}" -m mkscript_studio "$@"

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Esquema de colores de MKSCRIPT Studio para GtkSourceView 5 (claro). -->
+<style-scheme id="mkscript-light" name="MKSCRIPT Claro" version="1.0">
+  <author>MKSCRIPT Studio</author>
+  <description>Claro con acentos turquesa</description>
+
+  <color name="bg" value="#fbfcfd"/>
+  <color name="bg-line" value="#eef3f4"/>
+  <color name="fg" value="#1f2328"/>
+  <color name="muted" value="#97a0ab"/>
+  <color name="comment" value="#6a737d"/>
+  <color name="teal" value="#0f766e"/>
+  <color name="green" value="#22863a"/>
+  <color name="sky" value="#0369a1"/>
+  <color name="blue" value="#1d4ed8"/>
+  <color name="amber" value="#9a5b00"/>
+  <color name="orchid" value="#a21caf"/>
+  <color name="red" value="#cf222e"/>
+
+  <style name="text" foreground="fg" background="bg"/>
+  <style name="selection" background="#b6e4de"/>
+  <style name="selection-unfocused" background="#dbeeeb"/>
+  <style name="cursor" foreground="teal"/>
+  <style name="current-line" background="bg-line"/>
+  <style name="line-numbers" foreground="muted" background="bg"/>
+  <style name="current-line-number" foreground="fg" background="bg-line" bold="true"/>
+  <style name="right-margin" foreground="#e3e7ea" background="#f6f8f9"/>
+  <style name="bracket-match" foreground="teal" background="#ccefea" bold="true"/>
+  <style name="bracket-mismatch" foreground="red" underline="error"/>
+  <style name="search-match" background="#fff3b0"/>
+
+  <style name="def:comment" foreground="comment" italic="true"/>
+  <style name="def:shebang" foreground="comment" bold="true"/>
+  <style name="def:keyword" foreground="teal" bold="true"/>
+  <style name="def:statement" foreground="teal"/>
+  <style name="def:builtin" foreground="sky"/>
+  <style name="def:function" foreground="blue"/>
+  <style name="def:type" foreground="sky"/>
+  <style name="def:identifier" foreground="amber"/>
+  <style name="def:string" foreground="green"/>
+  <style name="def:special-char" foreground="orchid"/>
+  <style name="def:number" foreground="orchid"/>
+  <style name="def:decimal" foreground="orchid"/>
+  <style name="def:constant" foreground="orchid"/>
+  <style name="def:special-constant" foreground="orchid"/>
+  <style name="def:operator" foreground="#57606a"/>
+  <style name="def:preprocessor" foreground="sky"/>
+  <style name="def:error" foreground="red" underline="error"/>
+  <style name="def:note" foreground="amber" bold="true"/>
+</style-scheme>

@@ -1,0 +1,6 @@
+/* Acento turquesa (libadwaita >= 1.6: variables CSS). */
+:root {
+  --accent-color: #0f766e;
+  --accent-bg-color: #0f766e;
+  --accent-fg-color: #ffffff;
+}

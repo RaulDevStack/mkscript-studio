@@ -1,0 +1,23 @@
+/* Paleta grafito para el modo oscuro (libadwaita >= 1.6). */
+:root {
+  --accent-color: #2dd4bf;
+  --accent-bg-color: #0d8075;
+  --accent-fg-color: #ffffff;
+  --window-bg-color: #15171b;
+  --window-fg-color: #e6e8eb;
+  --view-bg-color: #1a1d22;
+  --view-fg-color: #e6e8eb;
+  --headerbar-bg-color: #1c1f25;
+  --headerbar-fg-color: #e6e8eb;
+  --headerbar-backdrop-color: #15171b;
+  --sidebar-bg-color: #121418;
+  --sidebar-fg-color: #dfe2e6;
+  --sidebar-backdrop-color: #121418;
+  --card-bg-color: #1f2329;
+  --card-fg-color: #e6e8eb;
+  --popover-bg-color: #22262d;
+  --popover-fg-color: #e6e8eb;
+  --dialog-bg-color: #1f2329;
+  --dialog-fg-color: #e6e8eb;
+  --destructive-bg-color: #c64640;
+}

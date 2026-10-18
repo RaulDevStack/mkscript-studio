@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Icono original de MKSCRIPT Studio (provisional, creado para este proyecto). Licencia MIT. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <defs>
+    <linearGradient id="body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2a2f37"/>
+      <stop offset="1" stop-color="#16181c"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="12" width="112" height="104" rx="22" fill="#0b0c0e" opacity="0.35"/>
+  <rect x="8" y="8" width="112" height="104" rx="22" fill="url(#body)"/>
+  <rect x="8.5" y="8.5" width="111" height="103" rx="21.5" fill="none" stroke="#3b424d"/>
+  <circle cx="26" cy="26" r="4" fill="#f87171"/>
+  <circle cx="39" cy="26" r="4" fill="#fbbf24"/>
+  <circle cx="52" cy="26" r="4" fill="#2dd4bf"/>
+  <path d="M30 52 L50 66 L30 80" fill="none" stroke="#2dd4bf" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="58" y="78" width="34" height="9" rx="4.5" fill="#d7dce2"/>
+  <path d="M97 40 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3 z" fill="#5eead4"/>
+</svg>

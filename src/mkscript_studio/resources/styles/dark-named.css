@@ -1,0 +1,21 @@
+/* Paleta grafito para el modo oscuro (libadwaita < 1.6). */
+@define-color accent_color #2dd4bf;
+@define-color accent_bg_color #0d8075;
+@define-color accent_fg_color #ffffff;
+@define-color window_bg_color #15171b;
+@define-color window_fg_color #e6e8eb;
+@define-color view_bg_color #1a1d22;
+@define-color view_fg_color #e6e8eb;
+@define-color headerbar_bg_color #1c1f25;
+@define-color headerbar_fg_color #e6e8eb;
+@define-color headerbar_backdrop_color #15171b;
+@define-color sidebar_bg_color #121418;
+@define-color sidebar_fg_color #dfe2e6;
+@define-color sidebar_backdrop_color #121418;
+@define-color card_bg_color #1f2329;
+@define-color card_fg_color #e6e8eb;
+@define-color popover_bg_color #22262d;
+@define-color popover_fg_color #e6e8eb;
+@define-color dialog_bg_color #1f2329;
+@define-color dialog_fg_color #e6e8eb;
+@define-color destructive_bg_color #c64640;

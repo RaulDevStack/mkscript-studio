@@ -1,0 +1,132 @@
+/* Componentes propios de MKSCRIPT Studio. Los colores salen de la paleta activa. */
+
+.mks-brand {
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.mks-toolbar {
+  background-color: @headerbar_bg_color;
+}
+
+.mks-statusbar {
+  background-color: @headerbar_bg_color;
+  min-height: 24px;
+}
+
+.mks-statusbar label {
+  opacity: 0.8;
+}
+
+.mks-side-panel {
+  background-color: @sidebar_bg_color;
+}
+
+.mks-bottom-panel,
+.mks-output {
+  background-color: @view_bg_color;
+}
+
+.mks-problems {
+  background-color: transparent;
+}
+
+.mks-searchbar {
+  background-color: @headerbar_bg_color;
+  border-bottom: 1px solid alpha(currentColor, 0.1);
+}
+
+.mks-editor textview,
+.mks-preview textview {
+  font-family: "JetBrains Mono", "Fira Code", "Source Code Pro", monospace;
+}
+
+.mks-preview {
+  border-radius: 12px;
+  border: 1px solid alpha(currentColor, 0.1);
+}
+
+.mks-hero {
+  padding: 28px;
+  border-radius: 16px;
+  background-color: alpha(@accent_bg_color, 0.1);
+  border: 1px solid alpha(@accent_bg_color, 0.3);
+}
+
+.mks-pill {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background-color: alpha(@accent_bg_color, 0.18);
+  color: @accent_color;
+  font-size: smaller;
+  font-weight: 600;
+}
+
+.mks-kbd {
+  font-family: monospace;
+  font-size: smaller;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background-color: alpha(currentColor, 0.08);
+  border: 1px solid alpha(currentColor, 0.14);
+}
+
+.mks-flow > flowboxchild {
+  padding: 0;
+}
+
+.mks-risk {
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+}
+
+.mks-risk.risk-low {
+  background-color: alpha(@success_color, 0.08);
+  border-color: alpha(@success_color, 0.3);
+}
+
+.mks-risk.risk-medium {
+  background-color: alpha(@warning_color, 0.08);
+  border-color: alpha(@warning_color, 0.35);
+}
+
+.mks-risk.risk-high {
+  background-color: alpha(@error_color, 0.08);
+  border-color: alpha(@error_color, 0.4);
+}
+
+.severity-error { color: @error_color; }
+.severity-warning { color: @warning_color; }
+.severity-info,
+.severity-style { color: @accent_color; }
+
+/* Lista de autocompletado */
+popover.mks-completion > contents {
+  padding: 4px;
+}
+
+popover.mks-completion row {
+  border-radius: 6px;
+  padding: 2px 4px;
+  min-height: 26px;
+}
+
+popover.mks-completion row:selected {
+  background-color: alpha(@accent_bg_color, 0.45);
+}
+
+.kind-badge {
+  font-family: monospace;
+  font-size: 0.75em;
+  font-weight: 700;
+  border-radius: 4px;
+  padding: 0 4px;
+}
+
+.kind-function { color: #8b5cf6; background-color: alpha(#8b5cf6, 0.16); }
+.kind-keyword  { color: #ec4899; background-color: alpha(#ec4899, 0.14); }
+.kind-builtin  { color: #14b8a6; background-color: alpha(#14b8a6, 0.16); }
+.kind-command  { color: #0ea5e9; background-color: alpha(#0ea5e9, 0.14); }
+.kind-variable { color: #f59e0b; background-color: alpha(#f59e0b, 0.16); }
+.kind-path     { color: #94a3b8; background-color: alpha(#94a3b8, 0.16); }
